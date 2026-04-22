@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="it" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Milano Cortina 2026 — XXV Giochi Olimpici Invernali. Scopri i Giochi, l'Hockey sul Ghiaccio e le sedi olimpiche.">
+  <title>Milano Cortina 2026 · Olimpiadi Invernali</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <style>
+    :root {
+      --c-blue:    #1E50D6;
+      --c-violet:  #7C3AED;
+      --c-ice:     #BAE6FD;
+      --c-rasp:    #DB2777;
+      --c-dark:    #05091A;
+      --c-dark2:   #0B1232;
+      --c-gold:    #EAB308;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--c-dark);
+      color: #fff;
+      font-family: 'Space Grotesk', sans-serif;
+      cursor: none;
+      overflow-x: hidden;
+    }
+
+    /* ── CUSTOM CURSOR (hockey puck) ── */
+    #cursor {
+      width: 22px; height: 9px;
+      background: #12121f;
+      border: 2px solid #BAE6FD;
+      border-radius: 50%;
+      position: fixed; top: 0; left: 0;
+      pointer-events: none; z-index: 9999;
+      transform: translate(-50%,-50%);
+      transition: width .2s, height .2s, background .2s;
+      box-shadow: 0 0 10px rgba(56,189,248,.5);
+      will-change: transform;
+    }
+    #cursor-dot {
+      width: 6px; height: 6px;
+      background: #38BDF8; border-radius: 50%;
+      position: fixed; top: 0; left: 0;
+      pointer-events: none; z-index: 9998;
+      transform: translate(-50%,-50%);
+      transition: transform .35s ease;
+      will-change: transform;
+    }
+    body:has(a:hover) #cursor,
+    body:has(button:hover) #cursor {
+      width: 42px; height: 16px;
+      background: rgba(56,189,248,.15);
+    }
+    @media (hover:none) { #cursor,#cursor-dot { display:none; } body { cursor:auto; } }
+
+    /* ── GLASS ── */
+    .glass {
+      background: rgba(255,255,255,.05);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(255,255,255,.09);
+    }
+    .glass-hover { transition: transform .3s, box-shadow .3s, background .3s, border-color .3s; }
+    .glass-hover:hover {
+      transform: translateY(-5px);
+      background: rgba(255,255,255,.09);
+      border-color: rgba(56,189,248,.35);
+      box-shadow: 0 24px 48px rgba(30,80,214,.25);
+    }
+
+    /* ── GRADIENTS ── */
+    .grad-text {
+      background: linear-gradient(120deg, #38BDF8 0%, #818CF8 50%, #E879F9 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .grad-text-gold {
+      background: linear-gradient(120deg, #FDE68A, #EAB308, #CA8A04);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ── AURORA BG ── */
+    .aurora {
+      background:
+        radial-gradient(ellipse 60% 40% at 15% 40%, rgba(124,58,237,.18) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 35% at 85% 20%, rgba(30,80,214,.16) 0%, transparent 65%),
+        radial-gradient(ellipse 40% 30% at 50% 85%, rgba(219,39,119,.08) 0%, transparent 60%),
+        var(--c-dark);
+    }
+
+    /* ── DIVIDER ── */
+    .divider { width: 52px; height: 3px; border-radius: 2px; margin-bottom: 1.25rem; }
+
+    /* ── REVEAL ── */
+    .reveal { opacity: 0; transform: translateY(44px); }
+
+    /* ── COUNTDOWN ── */
+    .cd-box {
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 14px;
+      padding: 14px 20px;
+      text-align: center;
+      min-width: 80px;
+    }
+    .cd-num {
+      font-size: clamp(2rem,5vw,3rem);
+      font-weight: 800;
+      background: linear-gradient(135deg,#38BDF8,#818CF8);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+      line-height: 1;
+    }
+
+    /* ── NAV ── */
+    .nav-link { position:relative; }
+    .nav-link::after {
+      content:''; position:absolute; bottom:-3px; left:0;
+      width:0; height:1px; background:#38BDF8;
+      transition: width .3s ease;
+    }
+    .nav-link:hover::after { width:100%; }
+    .nav-scrolled { background:rgba(5,9,26,.88)!important; backdrop-filter:blur(20px); border-bottom:1px solid rgba(255,255,255,.06); }
+
+    /* ── ORBS ── */
+    .orb {
+      position:absolute; border-radius:50%; filter:blur(72px);
+      opacity:.22; animation: float 9s ease-in-out infinite;
+    }
+    @keyframes float { 0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-28px) scale(1.05)} }
+
+    /* ── SCROLL INDICATOR ── */
+    .scroll-cue { animation: scroll-bounce 2.2s ease-in-out infinite; }
+    @keyframes scroll-bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(9px)} }
+
+    /* ── STAT COUNTER ── */
+    .stat-big { font-size: clamp(2.5rem,6vw,4.5rem); font-weight:900; line-height:1; }
+
+    /* ── RING PULSE ── */
+    .ring { animation: ring-pulse 2s ease-out infinite; }
+    @keyframes ring-pulse { 0%{transform:scale(1);opacity:.9} 100%{transform:scale(1.8);opacity:0} }
+
+    /* ── OLYMPIC RINGS ── */
+    .rings-bg { position:absolute; opacity:.04; bottom: -20px; left:50%; transform:translateX(-50%); width:500px; }
+
+    /* ── HERO HEIGHT ── */
+    #hero { min-height: 100svh; }
+
+    /* ── HOVER GLOW ── */
+    .glow-hover:hover { box-shadow:0 0 32px rgba(56,189,248,.22), 0 0 64px rgba(124,58,237,.12); }
+
+    /* section spacing */
+    .section { padding: 6rem 1.5rem; }
+    @media(max-width:640px) { .section { padding:4rem 1rem; } }
+  </style>
+</head>
+
+<body class="aurora">
+
+  <!-- ===== CURSOR ===== -->
+  <div id="cursor" role="none" aria-hidden="true"></div>
+  <div id="cursor-dot" role="none" aria-hidden="true"></div>
+
+  <!-- ===== NAVIGATION ===== -->
+  <nav id="navbar" class="fixed top-0 inset-x-0 z-50 transition-all duration-300">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-3 group">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-500 to-violet-600 flex items-center justify-center text-xs font-black tracking-tight">MC</div>
+        <span class="font-semibold text-white">Milano Cortina <span class="text-sky-400">2026</span></span>
+      </a>
+
+      <div class="hidden md:flex items-center gap-8">
+        <a href="index.html" class="nav-link text-white/75 hover:text-white text-sm font-medium">I Giochi</a>
+        <a href="hockey.html" class="nav-link text-white/75 hover:text-white text-sm font-medium">Hockey</a>
+        <a href="venues.html" class="nav-link text-white/75 hover:text-white text-sm font-medium">Sedi</a>
+      </div>
+
+      <a href="hockey.html" class="hidden md:inline-flex items-center gap-2 bg-gradient-to-r from-sky-500 to-violet-600 text-white text-sm font-bold px-5 py-2.5 rounded-full hover:opacity-90 hover:scale-105 transition-all">
+        🏒 Deep Dive Hockey
+      </a>
+
+      <button id="mob-btn" class="md:hidden p-2 text-white" aria-label="Apri menu">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M3 12h18M3 6h18M3 18h18"/>
+        </svg>
+      </button>
+    </div>
+    <div id="mob-menu" class="hidden md:hidden glass border-t border-white/5 px-6 py-5 space-y-4">
+      <a href="index.html" class="block text-white/80 hover:text-white font-medium">I Giochi</a>
+      <a href="hockey.html" class="block text-white/80 hover:text-white font-medium">Hockey</a>
+      <a href="venues.html" class="block text-white/80 hover:text-white font-medium">Sedi</a>
+      <a href="hockey.html" class="block text-center bg-gradient-to-r from-sky-500 to-violet-600 text-white font-bold px-5 py-3 rounded-full">🏒 Deep Dive Hockey</a>
+    </div>
+  </nav>
+
+  <!-- ===== HERO ===== -->
+  <section id="hero" class="relative flex items-center justify-center overflow-hidden">
+    <canvas id="snow-canvas" class="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true"></canvas>
+
+    <!-- Orbs -->
+    <div class="orb w-[500px] h-[500px] bg-violet-700" style="top:5%;left:-8%;animation-delay:0s"></div>
+    <div class="orb w-[420px] h-[420px] bg-sky-700"   style="top:30%;right:-8%;animation-delay:2.5s"></div>
+    <div class="orb w-[300px] h-[300px] bg-pink-800"  style="bottom:15%;left:35%;animation-delay:5s"></div>
+
+    <!-- Olympic rings watermark -->
+    <svg class="rings-bg" viewBox="0 0 500 120" fill="none" aria-hidden="true">
+      <circle cx="60"  cy="60" r="55" stroke="white" stroke-width="6"/>
+      <circle cx="165" cy="60" r="55" stroke="white" stroke-width="6"/>
+      <circle cx="270" cy="60" r="55" stroke="white" stroke-width="6"/>
+      <circle cx="375" cy="60" r="55" stroke="white" stroke-width="6"/>
+      <circle cx="480" cy="60" r="55" stroke="white" stroke-width="6"/>
+    </svg>
+
+    <!-- Content -->
+    <div class="relative z-10 text-center max-w-5xl mx-auto px-6 pt-24 pb-20">
+      <div id="h-badge" class="inline-flex items-center gap-2 glass rounded-full px-4 py-2 text-sm text-sky-300 mb-8">
+        <span class="w-2 h-2 bg-sky-400 rounded-full ring inline-block" aria-hidden="true"></span>
+        XXV Giochi Olimpici Invernali
+      </div>
+
+      <h1 id="h-title" class="font-black leading-none mb-5" style="font-size:clamp(3.5rem,12vw,9rem)">
+        <span class="block text-white">MILANO</span>
+        <span class="block grad-text">CORTINA</span>
+        <span class="block text-white/90" style="font-size:clamp(2rem,6vw,4.5rem);margin-top:.25em">2026</span>
+      </h1>
+
+      <p id="h-sub" class="text-white/55 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed mb-10">
+        Dove la velocità incontra la montagna. Il meglio dello sport invernale mondiale tra le Alpi italiane e il dinamismo di Milano.
+      </p>
+
+      <!-- Countdown -->
+      <div id="cd-wrap" class="mb-10"></div>
+
+      <!-- CTA -->
+      <div id="h-cta" class="flex flex-wrap justify-center gap-4">
+        <a href="hockey.html" class="group flex items-center gap-2 bg-gradient-to-r from-sky-500 to-violet-600 text-white font-bold px-8 py-4 rounded-full hover:shadow-[0_8px_32px_rgba(56,189,248,.35)] hover:scale-105 transition-all">
+          🏒 Deep Dive: Hockey
+          <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4-4 4M3 12h18"/></svg>
+        </a>
+        <a href="#overview" class="glass text-white font-semibold px-8 py-4 rounded-full hover:bg-white/10 transition-all">
+          Scopri i Giochi
+        </a>
+      </div>
+    </div>
+
+    <!-- Scroll cue -->
+    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 scroll-cue flex flex-col items-center gap-1 text-white/30 text-xs">
+      <span class="uppercase tracking-[.2em]">Scorri</span>
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+    </div>
+  </section>
+
+  <!-- ===== OVERVIEW ===== -->
+  <section id="overview" class="section">
+    <div class="max-w-7xl mx-auto">
+      <div class="reveal mb-14">
+        <div class="divider bg-gradient-to-r from-sky-400 to-violet-500"></div>
+        <h2 class="font-black text-white mb-3" style="font-size:clamp(2rem,5vw,3.5rem)">
+          I Giochi <span class="grad-text">a Distanza Ravvicinata</span>
+        </h2>
+        <p class="text-white/50 text-lg max-w-2xl leading-relaxed">
+          Un modello policentrico distribuito su 22.000 km² — la più grande area geografica nella storia olimpica.
+        </p>
+      </div>
+
+      <!-- Stats -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-5 mb-16">
+        <div class="reveal glass glass-hover glow-hover rounded-2xl p-6 text-center">
+          <div class="stat-big grad-text" data-target="22000">0</div>
+          <div class="text-white/40 text-xs mt-2 uppercase tracking-widest">km² di area</div>
+        </div>
+        <div class="reveal glass glass-hover glow-hover rounded-2xl p-6 text-center">
+          <div class="stat-big grad-text" data-target="7">0</div>
+          <div class="text-white/40 text-xs mt-2 uppercase tracking-widest">Cluster</div>
+        </div>
+        <div class="reveal glass glass-hover glow-hover rounded-2xl p-6 text-center">
+          <div class="stat-big grad-text" data-target="15">0</div>
+          <div class="text-white/40 text-xs mt-2 uppercase tracking-widest">Giorni di Gare</div>
+        </div>
+        <div class="reveal glass glass-hover glow-hover rounded-2xl p-6 text-center">
+          <div class="stat-big grad-text" data-target="116">0</div>
+          <div class="text-white/40 text-xs mt-2 uppercase tracking-widest">Medaglie</div>
+        </div>
+      </div>
+
+      <!-- Dual identity -->
+      <div class="grid md:grid-cols-2 gap-6 mb-6">
+        <!-- Milano -->
+        <div class="reveal glass glass-hover glow-hover rounded-3xl p-8 group relative overflow-hidden">
+          <div class="absolute inset-0 bg-gradient-to-br from-sky-900/25 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl"></div>
+          <div class="relative z-10">
+            <div class="flex items-center gap-3 mb-5">
+              <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-700 flex items-center justify-center text-2xl">🏙️</div>
+              <div>
+                <h3 class="text-xl font-bold text-white">Milano</h3>
+                <p class="text-sky-400 text-sm">La Capitale del Ghiaccio</p>
+              </div>
+            </div>
+            <p class="text-white/55 text-sm leading-relaxed mb-5">
+              La metropoli è il fulcro delle discipline indoor. Il <strong class="text-white">PalaItalia Santa Giulia</strong> — un'opera architettonica d'avanguardia — e il rinnovato <strong class="text-white">PalaTrussardi</strong> ospitano l'Hockey sul Ghiaccio.
+            </p>
+            <div class="space-y-2">
+              <div class="flex items-center gap-2 text-sm text-white/65"><span class="w-1.5 h-1.5 bg-sky-400 rounded-full shrink-0"></span>PalaItalia Santa Giulia — Hockey</div>
+              <div class="flex items-center gap-2 text-sm text-white/65"><span class="w-1.5 h-1.5 bg-sky-400 rounded-full shrink-0"></span>PalaTrussardi — Partite Hockey</div>
+              <div class="flex items-center gap-2 text-sm text-white/65"><span class="w-1.5 h-1.5 bg-violet-400 rounded-full shrink-0"></span>Mediolanum Forum — Pattinaggio</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cortina -->
+        <div class="reveal glass glass-hover glow-hover rounded-3xl p-8 group relative overflow-hidden">
+          <div class="absolute inset-0 bg-gradient-to-br from-violet-900/25 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl"></div>
+          <div class="relative z-10">
+            <div class="flex items-center gap-3 mb-5">
+              <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-700 flex items-center justify-center text-2xl">🏔️</div>
+              <div>
+                <h3 class="text-xl font-bold text-white">Cortina d'Ampezzo</h3>
+                <p class="text-violet-400 text-sm">L'Eredità Storica</p>
+              </div>
+            </div>
+            <p class="text-white/55 text-sm leading-relaxed mb-5">
+              A settant'anni dai Giochi del <strong class="text-white">1956</strong>, la "Regina delle Dolomiti" torna protagonista con lo sci alpino femminile e il curling nelle vette simbolo dell'Olimpismo italiano.
+            </p>
+            <div class="space-y-2">
+              <div class="flex items-center gap-2 text-sm text-white/65"><span class="w-1.5 h-1.5 bg-violet-400 rounded-full shrink-0"></span>Sci Alpino Femminile</div>
+              <div class="flex items-center gap-2 text-sm text-white/65"><span class="w-1.5 h-1.5 bg-violet-400 rounded-full shrink-0"></span>Curling — Sede storica</div>
+              <div class="flex items-center gap-2 text-sm text-white/65"><span class="w-1.5 h-1.5 bg-pink-400 rounded-full shrink-0"></span>Eredità olimpica dal 1956</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Innovation card -->
+      <div class="reveal glass rounded-3xl p-8 border border-violet-500/20">
+        <div class="flex flex-col sm:flex-row gap-5 items-start">
+          <div class="w-14 h-14 rounded-2xl shrink-0 bg-gradient-to-br from-violet-500/20 to-violet-700/20 border border-violet-500/25 flex items-center justify-center text-3xl">🆕</div>
+          <div>
+            <h3 class="text-xl font-bold text-white mb-2">Prima Storica: Sci Alpinismo Olimpico</h3>
+            <p class="text-white/55 leading-relaxed text-sm">
+              Per la prima volta nella storia olimpica, lo <strong class="text-violet-300">Sci Alpinismo</strong> fa il suo debutto ufficiale. Un riconoscimento simbolico per l'atleta che sfida la montagna nella sua forma più pura, combinando la fatica dell'ascesa alla precisione della discesa — l'innovazione ai Giochi non si ferma mai.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== MOUNTAIN CLUSTER ===== -->
+  <section class="section">
+    <div class="max-w-7xl mx-auto">
+      <div class="reveal mb-12">
+        <div class="divider bg-gradient-to-r from-violet-400 to-pink-500"></div>
+        <h2 class="font-black text-white mb-3" style="font-size:clamp(2rem,5vw,3.5rem)">
+          Il Teatro della <span class="grad-text">Montagna</span>
+        </h2>
+        <p class="text-white/50 max-w-2xl">Dalla Val di Fiemme alle Dolomiti, un arco alpino unico che connette storie e paesaggi mozzafiato.</p>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-5 mb-6">
+        <div class="reveal glass glass-hover glow-hover rounded-2xl p-6">
+          <div class="text-4xl mb-4">⛷️</div>
+          <h3 class="text-lg font-bold text-white mb-2">Bormio</h3>
+          <p class="text-white/50 text-sm leading-relaxed">Sci alpino maschile sulla leggendaria pista <strong class="text-white">Stelvio</strong>, uno dei tracciati più tecnici e spettacolari al mondo.</p>
+          <div class="mt-4 inline-flex items-center gap-1 text-xs text-sky-400/70 glass rounded-full px-3 py-1">Valtellina</div>
+        </div>
+        <div class="reveal glass glass-hover glow-hover rounded-2xl p-6">
+          <div class="text-4xl mb-4">🏂</div>
+          <h3 class="text-lg font-bold text-white mb-2">Livigno</h3>
+          <p class="text-white/50 text-sm leading-relaxed">Le spettacolari evoluzioni dello <strong class="text-white">Snowboard</strong> e dello Sci Freestyle in uno dei comprensori più alti d'Europa.</p>
+          <div class="mt-4 inline-flex items-center gap-1 text-xs text-sky-400/70 glass rounded-full px-3 py-1">Valtellina</div>
+        </div>
+        <div class="reveal glass glass-hover glow-hover rounded-2xl p-6">
+          <div class="text-4xl mb-4">🎯</div>
+          <h3 class="text-lg font-bold text-white mb-2">Anterselva</h3>
+          <p class="text-white/50 text-sm leading-relaxed">Il <strong class="text-white">Biathlon</strong> nell'arena più iconica d'Europa, dove precisione di tiro e resistenza si fondono.</p>
+          <div class="mt-4 inline-flex items-center gap-1 text-xs text-sky-400/70 glass rounded-full px-3 py-1">Alto Adige</div>
+        </div>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-5">
+        <div class="reveal glass glass-hover glow-hover rounded-2xl p-6">
+          <div class="text-4xl mb-4">🌲</div>
+          <h3 class="text-lg font-bold text-white mb-2">Val di Fiemme</h3>
+          <p class="text-white/50 text-sm leading-relaxed">Lo sci di fondo nel cuore delle Dolomiti — piste leggendarie che hanno forgiato i più grandi fondisti della storia.</p>
+          <div class="mt-4 inline-flex items-center gap-1 text-xs text-violet-400/70 glass rounded-full px-3 py-1">Trentino-Alto Adige</div>
+        </div>
+        <div class="reveal glass glass-hover glow-hover rounded-2xl p-6">
+          <div class="text-4xl mb-4">🛷</div>
+          <h3 class="text-lg font-bold text-white mb-2">Cortina · Bob & Skeleton</h3>
+          <p class="text-white/50 text-sm leading-relaxed">Il Sliding Center restituisce a Cortina le emozioni adrenalinici del <strong class="text-white">Bob, Skeleton e Slittino</strong> su una pista spettacolare.</p>
+          <div class="mt-4 inline-flex items-center gap-1 text-xs text-violet-400/70 glass rounded-full px-3 py-1">Dolomiti</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== HOCKEY TEASER ===== -->
+  <section class="section relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-r from-sky-900/15 to-violet-900/15 pointer-events-none"></div>
+    <div class="absolute inset-0 pointer-events-none" style="background:radial-gradient(ellipse at 50% 50%, rgba(56,189,248,.07) 0%, transparent 70%)"></div>
+
+    <div class="max-w-7xl mx-auto relative z-10">
+      <div class="grid md:grid-cols-2 gap-14 items-center">
+        <!-- Text -->
+        <div class="reveal">
+          <div class="divider bg-sky-400"></div>
+          <h2 class="font-black text-white mb-4" style="font-size:clamp(2.2rem,6vw,4rem)">
+            Hockey sul<br><span class="text-sky-400">Ghiaccio</span>
+          </h2>
+          <p class="text-white/55 text-lg leading-relaxed mb-6">
+            Il culmine della velocità negli sport di squadra. Con la partecipazione degli atleti <strong class="text-white">NHL</strong>, il ghiaccio milanese ha ospitato il meglio del professionismo globale.
+          </p>
+
+          <div class="space-y-3 mb-8">
+            <div class="flex items-center gap-3 glass rounded-xl px-4 py-3">
+              <span class="text-sky-400 text-xl shrink-0">⚡</span>
+              <span class="text-white/75 text-sm"><strong class="text-white">45 km/h</strong> — Velocità massima di un giocatore su pattini</span>
+            </div>
+            <div class="flex items-center gap-3 glass rounded-xl px-4 py-3">
+              <span class="text-sky-400 text-xl shrink-0">🏒</span>
+              <span class="text-white/75 text-sm"><strong class="text-white">170+ km/h</strong> — Velocità del puck in un tiro da slap shot</span>
+            </div>
+            <div class="flex items-center gap-3 glass rounded-xl px-4 py-3">
+              <span class="text-sky-400 text-xl shrink-0">📏</span>
+              <span class="text-white/75 text-sm"><strong class="text-white">60×26m</strong> — Standard NHL adottato per la prima volta</span>
+            </div>
+            <div class="flex items-center gap-3 glass rounded-xl px-4 py-3">
+              <span class="text-sky-400 text-xl shrink-0">⏱️</span>
+              <span class="text-white/75 text-sm"><strong class="text-white">45–60 sec</strong> — Durata massima di uno shift prima del cambio</span>
+            </div>
+          </div>
+
+          <a href="hockey.html" class="group inline-flex items-center gap-3 bg-sky-500 hover:bg-sky-400 text-white font-bold px-8 py-4 rounded-full transition-all hover:shadow-[0_8px_32px_rgba(14,165,233,.4)] hover:scale-105">
+            Esplora il Deep Dive
+            <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4-4 4M3 12h18"/></svg>
+          </a>
+        </div>
+
+        <!-- Animated rink -->
+        <div class="reveal">
+          <div class="glass rounded-3xl p-6 relative overflow-hidden max-w-md mx-auto">
+            <p class="text-white/30 text-xs text-center mb-3 uppercase tracking-widest">PalaItalia Santa Giulia · 60×26m NHL</p>
+            <canvas id="rink-canvas" width="360" height="220" class="w-full rounded-xl" aria-label="Pista da hockey animata"></canvas>
+            <div class="mt-3 flex justify-between text-xs text-white/25 px-1">
+              <span>Zona difensiva</span>
+              <span>Zona neutrale</span>
+              <span>Zona offensiva</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="py-16 px-6 border-t border-white/5">
+    <div class="max-w-7xl mx-auto">
+      <div class="grid md:grid-cols-3 gap-10 mb-10">
+        <div>
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-violet-600 flex items-center justify-center font-black text-xs">MC</div>
+            <span class="font-semibold text-white">Milano Cortina 2026</span>
+          </div>
+          <p class="text-white/35 text-sm leading-relaxed mb-3">
+            XXV Giochi Olimpici Invernali — Un evento senza precedenti nella storia dello sport italiano.
+          </p>
+          <p class="text-white/20 text-xs">6–22 Febbraio 2026</p>
+        </div>
+
+        <div>
+          <h4 class="text-white font-semibold mb-4">Esplora</h4>
+          <nav class="space-y-2" aria-label="Footer navigation">
+            <a href="index.html" class="block text-white/45 hover:text-white text-sm transition-colors">I Giochi</a>
+            <a href="hockey.html" class="block text-white/45 hover:text-white text-sm transition-colors">Hockey sul Ghiaccio</a>
+            <a href="venues.html" class="block text-white/45 hover:text-white text-sm transition-colors">Sedi Olimpiche</a>
+          </nav>
+        </div>
+
+        <div>
+          <h4 class="text-white font-semibold mb-4">Link Ufficiali</h4>
+          <div class="space-y-2">
+            <a href="https://www.milanocortina2026.olympics.com" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 glass hover:bg-white/10 text-white/55 hover:text-white px-4 py-2.5 rounded-xl text-sm transition-all">
+              🌐 Sito Ufficiale Milano Cortina 2026
+            </a>
+            <a href="https://www.olympic.org" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 glass hover:bg-white/10 text-white/55 hover:text-white px-4 py-2.5 rounded-xl text-sm transition-all">
+              🏅 Comitato Olimpico Internazionale
+            </a>
+            <a href="https://www.iihf.com" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 glass hover:bg-white/10 text-white/55 hover:text-white px-4 py-2.5 rounded-xl text-sm transition-all">
+              🏒 IIHF — Federazione Internazionale
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===== SCRIPTS ===== -->
+  <script>
+    // ── CURSOR ──
+    const cur = document.getElementById('cursor');
+    const dot = document.getElementById('cursor-dot');
+    let mx = 0, my = 0, dx = 0, dy = 0;
+    document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; cur.style.left = mx+'px'; cur.style.top = my+'px'; });
+    (function trail() { dx += (mx-dx)*.14; dy += (my-dy)*.14; dot.style.left = dx+'px'; dot.style.top = dy+'px'; requestAnimationFrame(trail); })();
+
+    // ── SNOWFLAKE CANVAS ──
+    const snow = document.getElementById('snow-canvas');
+    const sc = snow.getContext('2d');
+    function resizeSnow() { snow.width=innerWidth; snow.height=innerHeight; }
+    resizeSnow(); addEventListener('resize', resizeSnow);
+
+    class Flake {
+      constructor() { this.init(); }
+      init() {
+        this.x  = Math.random() * snow.width;
+        this.y  = Math.random() * snow.height - snow.height;
+        this.s  = Math.random() * 3.5 + 1;
+        this.vy = Math.random() * .45 + .12;
+        this.vx = (Math.random()-.5) * .18;
+        this.o  = Math.random() * .55 + .1;
+        this.r  = Math.random() * Math.PI*2;
+        this.dr = (Math.random()-.5) * .006;
+        this.arms = Math.random()>.4 ? 6 : 4;
+      }
+      step() {
+        this.y += this.vy; this.x += this.vx; this.r += this.dr;
+        if (this.y > snow.height+20) this.init();
+      }
+      draw() {
+        sc.save(); sc.translate(this.x,this.y); sc.rotate(this.r);
+        sc.globalAlpha = this.o; sc.strokeStyle='#7DD3FC'; sc.lineWidth=.7;
+        const n = this.arms, a = (Math.PI*2)/n;
+        for(let i=0;i<n;i++){
+          sc.beginPath(); sc.moveTo(0,0); sc.lineTo(0,this.s*3.2);
+          sc.moveTo(0,this.s*1.1); sc.lineTo(this.s*.75,this.s*2); sc.moveTo(0,this.s*1.1); sc.lineTo(-this.s*.75,this.s*2);
+          sc.stroke(); sc.rotate(a);
+        }
+        sc.restore();
+      }
+    }
+    const flakes = Array.from({length:90}, ()=>new Flake());
+    (function animSnow(){ sc.clearRect(0,0,snow.width,snow.height); flakes.forEach(f=>{f.step();f.draw();}); requestAnimationFrame(animSnow); })();
+
+    // ── COUNTDOWN ──
+    const gStart = new Date('2026-02-06T09:00:00');
+    const gEnd   = new Date('2026-02-22T23:59:59');
+    const now    = new Date();
+    const wrap   = document.getElementById('cd-wrap');
+
+    if (now > gEnd) {
+      const days = Math.floor((now - gEnd)/(1000*60*60*24));
+      wrap.innerHTML = `
+        <div class="inline-flex flex-col items-center gap-3">
+          <div class="glass rounded-2xl px-8 py-5 text-center border border-sky-500/20">
+            <p class="text-sky-400 text-xs uppercase tracking-[.2em] mb-2">I Giochi si sono conclusi</p>
+            <p class="text-white font-black text-2xl">6 – 22 Febbraio 2026</p>
+            <p class="text-white/35 text-sm mt-1">${days} giorni fa · <span class="text-sky-300">Rivivi la Magia</span></p>
+          </div>
+        </div>`;
+    } else if (now >= gStart) {
+      wrap.innerHTML = `<div class="inline-flex items-center gap-2 bg-emerald-500/15 border border-emerald-500/30 rounded-full px-6 py-3"><span class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span><span class="text-emerald-400 font-semibold">I Giochi sono in corso!</span></div>`;
+    } else {
+      function tick() {
+        const d = gStart - new Date();
+        const dd = Math.floor(d/(1000*60*60*24)), hh = Math.floor((d%(1000*60*60*24))/(1000*60*60));
+        const mm = Math.floor((d%(1000*60*60))/(1000*60)), ss = Math.floor((d%(1000*60))/1000);
+        wrap.innerHTML = `
+          <div>
+            <p class="text-white/35 text-xs uppercase tracking-[.2em] mb-4 text-center">Inizio dei Giochi tra</p>
+            <div class="flex items-end justify-center gap-3">
+              ${[['Giorni',dd,3],['Ore',hh,2],['Minuti',mm,2],['Secondi',ss,2]].map(([l,v,p],i)=>`
+                ${i?'<span class="text-white/25 text-2xl font-thin pb-5">:</span>':''}
+                <div class="cd-box"><div class="cd-num">${String(v).padStart(p,'0')}</div><div class="text-white/35 text-xs mt-1 uppercase tracking-widest">${l}</div></div>
+              `).join('')}
+            </div>
+          </div>`;
+      }
+      tick(); setInterval(tick,1000);
+    }
+
+    // ── ANIMATED RINK (teaser canvas) ──
+    const rc = document.getElementById('rink-canvas');
+    if(rc){
+      const rx = rc.getContext('2d');
+      const RW=360, RH=220;
+      let pt = 0, puck={x:180,y:110};
+      const path = [[180,110],[310,65],[350,110],[310,155],[180,110],[50,65],[10,110],[50,155],[180,110]];
+      let pi = 0, pf = 0;
+
+      function drawRink() {
+        rx.clearRect(0,0,RW,RH);
+        // Ice
+        rx.fillStyle='rgba(14,165,233,.06)'; rx.beginPath(); rx.roundRect(4,4,RW-8,RH-8,28); rx.fill();
+        rx.strokeStyle='rgba(56,189,248,.25)'; rx.lineWidth=1.5; rx.beginPath(); rx.roundRect(4,4,RW-8,RH-8,28); rx.stroke();
+        // Center line
+        rx.strokeStyle='rgba(239,68,68,.45)'; rx.lineWidth=2; rx.beginPath(); rx.moveTo(180,4); rx.lineTo(180,RH-4); rx.stroke();
+        // Blue lines
+        rx.strokeStyle='rgba(56,189,248,.45)'; rx.lineWidth=2;
+        [118,242].forEach(x=>{ rx.beginPath(); rx.moveTo(x,4); rx.lineTo(x,RH-4); rx.stroke(); });
+        // Center circle
+        rx.strokeStyle='rgba(239,68,68,.35)'; rx.lineWidth=1.5; rx.beginPath(); rx.arc(180,110,35,0,Math.PI*2); rx.stroke();
+        rx.fillStyle='rgba(239,68,68,.7)'; rx.beginPath(); rx.arc(180,110,3,0,Math.PI*2); rx.fill();
+        // Goals
+        rx.fillStyle='rgba(56,189,248,.08)'; rx.strokeStyle='rgba(56,189,248,.4)'; rx.lineWidth=1.5;
+        [[4,85],[RW-28,85]].forEach(([x,y])=>{ rx.beginPath(); rx.roundRect(x,y,24,50,5); rx.fill(); rx.stroke(); });
+        // Faceoff dots
+        rx.fillStyle='rgba(56,189,248,.5)';
+        [[82,70],[82,150],[278,70],[278,150]].forEach(([x,y])=>{ rx.beginPath(); rx.arc(x,y,3,0,Math.PI*2); rx.fill(); });
+        // Faceoff circles (small)
+        rx.strokeStyle='rgba(56,189,248,.2)'; rx.lineWidth=1;
+        [[82,70],[82,150],[278,70],[278,150]].forEach(([x,y])=>{ rx.beginPath(); rx.arc(x,y,22,0,Math.PI*2); rx.stroke(); });
+        // Puck trail
+        rx.strokeStyle='rgba(56,189,248,.2)'; rx.lineWidth=6; rx.lineCap='round';
+        rx.beginPath(); rx.moveTo(path[pi][0],path[pi][1]);
+        rx.lineTo(puck.x,puck.y); rx.stroke();
+        // Puck
+        rx.fillStyle='#12121f'; rx.strokeStyle='#BAE6FD'; rx.lineWidth=1.5;
+        rx.beginPath(); rx.ellipse(puck.x,puck.y,7,4,0,0,Math.PI*2); rx.fill(); rx.stroke();
+      }
+
+      function animRink() {
+        const next = path[(pi+1)%path.length];
+        pf += .018;
+        if(pf>=1){ pf=0; pi=(pi+1)%path.length; }
+        const cur = path[pi], nx = path[(pi+1)%path.length];
+        puck.x = cur[0]+(nx[0]-cur[0])*pf;
+        puck.y = cur[1]+(nx[1]-cur[1])*pf;
+        drawRink(); requestAnimationFrame(animRink);
+      }
+      animRink();
+    }
+
+    // ── GSAP ──
+    gsap.registerPlugin(ScrollTrigger);
+
+    gsap.timeline({defaults:{ease:'power3.out'}})
+      .from('#h-badge',{opacity:0,y:16,duration:.6})
+      .from('#h-title span',{opacity:0,y:70,stagger:.12,duration:.85},'-=.2')
+      .from('#h-sub',{opacity:0,y:18,duration:.6},'-=.4')
+      .from('#cd-wrap',{opacity:0,y:16,duration:.6},'-=.35')
+      .from('#h-cta',{opacity:0,y:16,duration:.6},'-=.4');
+
+    document.querySelectorAll('.reveal').forEach((el,i)=>{
+      gsap.fromTo(el,{opacity:0,y:50},{
+        opacity:1,y:0,duration:.8,ease:'power2.out',
+        delay:(i%4)*.08,
+        scrollTrigger:{trigger:el,start:'top 87%',toggleActions:'play none none none'}
+      });
+    });
+
+    // Animated stat counters
+    document.querySelectorAll('[data-target]').forEach(el=>{
+      const target = parseInt(el.dataset.target);
+      ScrollTrigger.create({
+        trigger:el,start:'top 85%',once:true,
+        onEnter:()=>{
+          let start=0, dur=1600, step=16;
+          const inc = target/(dur/step);
+          const t = setInterval(()=>{
+            start = Math.min(start+inc,target);
+            el.textContent = target>=1000 ? Math.round(start).toLocaleString('it-IT') : Math.round(start);
+            if(start>=target) clearInterval(t);
+          },step);
+        }
+      });
+    });
+
+    // Navbar scroll
+    const nav = document.getElementById('navbar');
+    addEventListener('scroll',()=>{ nav.classList.toggle('nav-scrolled',scrollY>60); });
+
+    // Mobile menu
+    document.getElementById('mob-btn').addEventListener('click',()=>{
+      document.getElementById('mob-menu').classList.toggle('hidden');
+    });
+
+    // Parallax hero title
+    const ht = document.getElementById('h-title');
+    addEventListener('scroll',()=>{ if(ht) ht.style.transform=`translateY(${scrollY*.25}px)`; });
+  </script>
+</body>
+</html>

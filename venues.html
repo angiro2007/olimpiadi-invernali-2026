@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="it" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Sedi Olimpiche — Milano Cortina 2026. PalaItalia Santa Giulia, Cortina, Bormio e tutte le arene.">
+  <title>Sedi Olimpiche · Milano Cortina 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <style>
+    :root {
+      --c-blue:   #1E50D6;
+      --c-violet: #7C3AED;
+      --c-ice:    #BAE6FD;
+      --c-dark:   #050912;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html{scroll-behavior:smooth;}
+    body{background:var(--c-dark);color:#fff;font-family:'Space Grotesk',sans-serif;cursor:none;overflow-x:hidden;}
+
+    /* cursor */
+    #cursor{width:22px;height:9px;background:#12121f;border:2px solid #BAE6FD;border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:width .2s,height .2s,background .2s;box-shadow:0 0 10px rgba(56,189,248,.5);}
+    #cursor-dot{width:5px;height:5px;background:#38BDF8;border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);}
+    @media(hover:none){#cursor,#cursor-dot{display:none;}body{cursor:auto;}}
+
+    /* glass */
+    .glass{background:rgba(255,255,255,.05);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.08);}
+    .glass-h{transition:transform .3s,box-shadow .3s,background .3s,border-color .3s;}
+    .glass-h:hover{transform:translateY(-5px);background:rgba(255,255,255,.09);border-color:rgba(56,189,248,.3);box-shadow:0 20px 40px rgba(30,80,214,.2);}
+
+    /* gradients */
+    .gt{background:linear-gradient(120deg,#38BDF8,#818CF8,#E879F9);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+
+    /* aurora */
+    .aurora{background:radial-gradient(ellipse 60% 40% at 20% 30%,rgba(30,80,214,.15) 0%,transparent 70%),radial-gradient(ellipse 50% 35% at 80% 15%,rgba(124,58,237,.12) 0%,transparent 65%),radial-gradient(ellipse 40% 30% at 50% 80%,rgba(56,189,248,.08) 0%,transparent 60%),var(--c-dark);}
+
+    /* nav */
+    .nav-link::after{content:'';position:absolute;bottom:-3px;left:0;width:0;height:1px;background:#38BDF8;transition:width .3s;}
+    .nav-link:hover::after{width:100%;}
+    .nav-scrolled{background:rgba(5,9,18,.9)!important;backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.05);}
+
+    /* divider */
+    .divider{width:52px;height:3px;border-radius:2px;margin-bottom:1.25rem;}
+
+    /* hero */
+    #hero{min-height:100svh;}
+
+    /* reveal */
+    .reveal{opacity:0;transform:translateY(44px);}
+
+    /* section */
+    .section{padding:6rem 1.5rem;}
+    @media(max-width:640px){.section{padding:4rem 1rem;}}
+
+    /* orbs */
+    .orb{position:absolute;border-radius:50%;filter:blur(72px);opacity:.18;animation:float 9s ease-in-out infinite;}
+    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-25px)}}
+
+    /* map */
+    #venue-map{user-select:none;}
+    .map-pin{cursor:pointer;transition:transform .2s;}
+    .map-pin:hover{transform:scale(1.15);}
+    .map-label{font-family:'Space Grotesk',sans-serif;font-size:10px;fill:rgba(255,255,255,.75);pointer-events:none;}
+
+    /* venue card active */
+    .venue-card{transition:all .3s;border:1px solid rgba(255,255,255,.07);}
+    .venue-card.active{border-color:rgba(56,189,248,.5);background:rgba(56,189,248,.08)!important;}
+    .venue-card:hover{border-color:rgba(56,189,248,.3);background:rgba(255,255,255,.08)!important;}
+
+    /* badge */
+    .badge-hockey{background:rgba(56,189,248,.15);border:1px solid rgba(56,189,248,.3);color:#38BDF8;}
+    .badge-ski{background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.3);color:#A78BFA;}
+    .badge-slide{background:rgba(234,179,8,.12);border:1px solid rgba(234,179,8,.25);color:#FDE68A;}
+    .badge-snow{background:rgba(219,39,119,.12);border:1px solid rgba(219,39,119,.25);color:#F472B6;}
+    .badge-nordic{background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.25);color:#6EE7B7;}
+
+    /* feature highlight */
+    .feature-line{position:relative;padding-left:1.5rem;}
+    .feature-line::before{content:'';position:absolute;left:0;top:.5rem;width:8px;height:2px;border-radius:1px;background:linear-gradient(90deg,#38BDF8,#818CF8);}
+
+    /* Pulsing marker */
+    .pin-pulse{animation:pin-p 2.5s ease-in-out infinite;}
+    @keyframes pin-p{0%,100%{r:8;opacity:.6}50%{r:13;opacity:0}}
+
+    /* Modal */
+    #modal{display:none;position:fixed;inset:0;z-index:1000;align-items:center;justify-content:center;background:rgba(5,9,18,.8);backdrop-filter:blur(8px);}
+    #modal.open{display:flex;}
+    #modal-box{max-width:500px;width:90%;border-radius:24px;padding:2rem;position:relative;}
+  </style>
+</head>
+<body class="aurora">
+
+  <!-- cursor -->
+  <div id="cursor" aria-hidden="true"></div>
+  <div id="cursor-dot" aria-hidden="true"></div>
+
+  <!-- ===== NAV ===== -->
+  <nav id="navbar" class="fixed top-0 inset-x-0 z-50 transition-all duration-300">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-500 to-violet-600 flex items-center justify-center text-xs font-black">MC</div>
+        <span class="font-semibold text-white">Milano Cortina <span class="text-sky-400">2026</span></span>
+      </a>
+      <div class="hidden md:flex items-center gap-8">
+        <a href="index.html"  class="nav-link relative text-white/70 hover:text-white text-sm font-medium">I Giochi</a>
+        <a href="hockey.html" class="nav-link relative text-white/70 hover:text-white text-sm font-medium">Hockey</a>
+        <a href="venues.html" class="nav-link relative text-sky-400 text-sm font-bold">Sedi</a>
+      </div>
+      <a href="hockey.html" class="hidden md:inline-flex items-center gap-2 glass hover:bg-white/10 text-white text-sm font-semibold px-5 py-2.5 rounded-full transition-all">
+        🏒 Hockey Deep Dive
+      </a>
+      <button id="mob-btn" class="md:hidden p-2 text-white" aria-label="Menu">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+    </div>
+    <div id="mob-menu" class="hidden md:hidden glass border-t border-white/5 px-6 py-5 space-y-4">
+      <a href="index.html"  class="block text-white/80 hover:text-white">I Giochi</a>
+      <a href="hockey.html" class="block text-white/80 hover:text-white">Hockey</a>
+      <a href="venues.html" class="block text-sky-400 font-bold">Sedi</a>
+    </div>
+  </nav>
+
+  <!-- ===== HERO ===== -->
+  <section id="hero" class="relative flex items-center justify-center overflow-hidden">
+    <canvas id="hero-canvas" class="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true"></canvas>
+
+    <div class="orb w-[450px] h-[450px] bg-violet-700" style="top:5%;right:-5%;animation-delay:0s"></div>
+    <div class="orb w-[380px] h-[380px] bg-sky-700"   style="bottom:15%;left:-8%;animation-delay:3s"></div>
+
+    <div class="relative z-10 text-center max-w-5xl mx-auto px-6 pt-24 pb-20">
+      <div id="h-badge" class="inline-flex items-center gap-2 glass rounded-full px-4 py-2 text-sm text-violet-300 mb-6">
+        <span class="w-2 h-2 bg-violet-400 rounded-full animate-pulse" aria-hidden="true"></span>
+        7 Cluster · 22.000 km² · 13 Sedi
+      </div>
+
+      <h1 id="h-title" class="font-black leading-none mb-5" style="font-size:clamp(3rem,11vw,8rem)">
+        <span class="block text-white">LE SEDI</span>
+        <span class="block gt">OLIMPICHE</span>
+      </h1>
+
+      <p id="h-sub" class="text-white/50 text-xl max-w-2xl mx-auto leading-relaxed mb-10">
+        Da Milano alle vette delle Dolomiti. Un arco alpino che copre tre regioni e racconta la storia e il futuro dell'Italia sportiva.
+      </p>
+
+      <div id="h-cta" class="flex flex-wrap justify-center gap-4">
+        <a href="#mappa" class="group flex items-center gap-2 bg-gradient-to-r from-violet-600 to-sky-500 text-white font-bold px-8 py-4 rounded-full hover:scale-105 hover:shadow-[0_8px_32px_rgba(124,58,237,.4)] transition-all">
+          🗺️ Esplora la Mappa
+          <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </a>
+        <a href="#pala-italia" class="glass text-white font-semibold px-8 py-4 rounded-full hover:bg-white/10 transition-all">
+          🏒 PalaItalia Santa Giulia
+        </a>
+      </div>
+    </div>
+
+    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 z-10" style="animation:s-b 2s ease-in-out infinite">
+      <div class="flex flex-col items-center gap-1 text-white/25 text-xs">
+        <span class="uppercase tracking-[.2em]">Scopri</span>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+      </div>
+    </div>
+    <style>@keyframes s-b{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,9px)}}</style>
+  </section>
+
+  <!-- ===== MAPPA INTERATTIVA ===== -->
+  <section id="mappa" class="section">
+    <div class="max-w-7xl mx-auto">
+      <div class="reveal mb-12">
+        <div class="divider bg-gradient-to-r from-violet-400 to-sky-400"></div>
+        <h2 class="font-black text-white mb-3" style="font-size:clamp(2rem,5vw,3.5rem)">
+          Mappa dei <span class="gt">Cluster Olimpici</span>
+        </h2>
+        <p class="text-white/50 text-lg max-w-2xl">Clicca sui marker per esplorare ogni sede. Il modello policentrico di Milano Cortina 2026 è unico nella storia olimpica.</p>
+      </div>
+
+      <div class="reveal grid lg:grid-cols-5 gap-6 items-start">
+        <!-- Map -->
+        <div class="lg:col-span-3 glass rounded-3xl p-4 md:p-6 relative">
+          <svg id="venue-map" viewBox="0 0 560 420" class="w-full" role="img" aria-label="Mappa interattiva delle sedi olimpiche di Milano Cortina 2026">
+            <!-- Italy silhouette (simplified northern Italy outline) -->
+            <defs>
+              <linearGradient id="mapGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="rgba(56,189,248,.08)"/>
+                <stop offset="100%" stop-color="rgba(124,58,237,.06)"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Background -->
+            <rect x="0" y="0" width="560" height="420" fill="rgba(14,165,233,.03)" rx="16"/>
+
+            <!-- Simplified Alps mountains band -->
+            <path d="M20,100 Q80,60 140,80 Q200,50 260,65 Q320,50 380,70 Q440,55 500,75 Q540,80 560,85 L560,0 L0,0 Z" fill="rgba(124,58,237,.06)" stroke="rgba(124,58,237,.15)" stroke-width=".5"/>
+            <!-- Mountain triangles (decorative) -->
+            <g opacity=".2" fill="none" stroke="rgba(186,230,253,.4)" stroke-width="1">
+              <polygon points="90,95 110,65 130,95"/>
+              <polygon points="130,90 155,58 180,90"/>
+              <polygon points="200,85 225,52 250,85"/>
+              <polygon points="270,80 295,50 320,80"/>
+              <polygon points="340,85 365,55 390,85"/>
+              <polygon points="410,82 435,52 460,82"/>
+              <polygon points="470,88 492,60 514,88"/>
+            </g>
+
+            <!-- Rivers/Po valley (decorative lines) -->
+            <path d="M60,220 Q180,200 300,215 Q420,230 540,210" fill="none" stroke="rgba(56,189,248,.1)" stroke-width="1.5" stroke-dasharray="4,3"/>
+
+            <!-- Lake Garda (decorative) -->
+            <ellipse cx="360" cy="200" rx="12" ry="25" fill="rgba(56,189,248,.1)" stroke="rgba(56,189,248,.2)" stroke-width="1"/>
+            <text x="376" y="200" fill="rgba(255,255,255,.2)" font-size="7" font-family="Space Grotesk">Lago di Garda</text>
+
+            <!-- Lake Como -->
+            <ellipse cx="240" cy="175" rx="8" ry="18" fill="rgba(56,189,248,.1)" stroke="rgba(56,189,248,.2)" stroke-width="1"/>
+            <text x="252" y="175" fill="rgba(255,255,255,.2)" font-size="7" font-family="Space Grotesk">L. Como</text>
+
+            <!-- Connecting lines between venues (dashed route) -->
+            <polyline points="120,230 160,150 240,110 300,130 380,100 440,115 490,105" fill="none" stroke="rgba(56,189,248,.12)" stroke-width="1.5" stroke-dasharray="5,4"/>
+
+            <!-- ── VENUE MARKERS ── -->
+
+            <!-- Milano (main hub) -->
+            <g class="map-pin" id="pin-milano" data-venue="milano" role="button" tabindex="0" aria-label="Milano — Hockey e Pattinaggio">
+              <circle cx="120" cy="230" r="18" fill="rgba(56,189,248,.15)" stroke="rgba(56,189,248,.4)" stroke-width="1.5"/>
+              <circle class="pin-pulse" cx="120" cy="230" r="8" fill="rgba(56,189,248,.3)" stroke="none"/>
+              <circle cx="120" cy="230" r="8" fill="#38BDF8"/>
+              <text x="120" y="234" text-anchor="middle" fill="white" font-size="8" font-family="Space Grotesk" font-weight="700">🏒</text>
+              <text x="120" y="255" text-anchor="middle" class="map-label" font-weight="700" fill="white">MILANO</text>
+              <text x="120" y="264" text-anchor="middle" class="map-label" fill="rgba(56,189,248,.8)">Hockey · Pattinaggio</text>
+            </g>
+
+            <!-- Cortina -->
+            <g class="map-pin" id="pin-cortina" data-venue="cortina" role="button" tabindex="0" aria-label="Cortina d'Ampezzo — Sci Alpino e Curling">
+              <circle cx="440" cy="115" r="15" fill="rgba(124,58,237,.15)" stroke="rgba(124,58,237,.4)" stroke-width="1.5"/>
+              <circle cx="440" cy="115" r="6" fill="#A78BFA"/>
+              <text x="440" y="136" text-anchor="middle" class="map-label" font-weight="700" fill="white">CORTINA</text>
+              <text x="440" y="145" text-anchor="middle" class="map-label" fill="rgba(167,139,250,.8)">Sci Alpino</text>
+            </g>
+
+            <!-- Bormio -->
+            <g class="map-pin" id="pin-bormio" data-venue="bormio" role="button" tabindex="0" aria-label="Bormio — Sci Alpino Maschile">
+              <circle cx="245" cy="110" r="13" fill="rgba(234,179,8,.12)" stroke="rgba(234,179,8,.35)" stroke-width="1.5"/>
+              <circle cx="245" cy="110" r="6" fill="#EAB308"/>
+              <text x="245" y="130" text-anchor="middle" class="map-label" font-weight="700" fill="white">BORMIO</text>
+              <text x="245" y="139" text-anchor="middle" class="map-label" fill="rgba(234,179,8,.8)">Sci Maschile</text>
+            </g>
+
+            <!-- Livigno -->
+            <g class="map-pin" id="pin-livigno" data-venue="livigno" role="button" tabindex="0" aria-label="Livigno — Snowboard e Freestyle">
+              <circle cx="190" cy="130" r="12" fill="rgba(219,39,119,.12)" stroke="rgba(219,39,119,.35)" stroke-width="1.5"/>
+              <circle cx="190" cy="130" r="5" fill="#DB2777"/>
+              <text x="190" y="148" text-anchor="middle" class="map-label" font-weight="700" fill="white">LIVIGNO</text>
+              <text x="190" y="157" text-anchor="middle" class="map-label" fill="rgba(219,39,119,.8)">Snowboard</text>
+            </g>
+
+            <!-- Anterselva -->
+            <g class="map-pin" id="pin-anterselva" data-venue="anterselva" role="button" tabindex="0" aria-label="Anterselva — Biathlon">
+              <circle cx="490" cy="105" r="12" fill="rgba(16,185,129,.12)" stroke="rgba(16,185,129,.35)" stroke-width="1.5"/>
+              <circle cx="490" cy="105" r="5" fill="#10B981"/>
+              <text x="490" y="122" text-anchor="middle" class="map-label" font-weight="700" fill="white">ANTERSELVA</text>
+              <text x="490" y="131" text-anchor="middle" class="map-label" fill="rgba(16,185,129,.8)">Biathlon</text>
+            </g>
+
+            <!-- Val di Fiemme -->
+            <g class="map-pin" id="pin-fiemme" data-venue="fiemme" role="button" tabindex="0" aria-label="Val di Fiemme — Fondo e Salto">
+              <circle cx="385" cy="142" r="12" fill="rgba(16,185,129,.12)" stroke="rgba(16,185,129,.35)" stroke-width="1.5"/>
+              <circle cx="385" cy="142" r="5" fill="#34D399"/>
+              <text x="385" y="160" text-anchor="middle" class="map-label" font-weight="700" fill="white">VAL DI FIEMME</text>
+              <text x="385" y="169" text-anchor="middle" class="map-label" fill="rgba(52,211,153,.8)">Fondo · Salto</text>
+            </g>
+
+            <!-- Verona (Cerimonia) -->
+            <g class="map-pin" id="pin-verona" data-venue="verona" role="button" tabindex="0" aria-label="Verona — Cerimonia di Apertura">
+              <circle cx="305" cy="205" r="11" fill="rgba(249,168,212,.12)" stroke="rgba(249,168,212,.3)" stroke-width="1.5"/>
+              <circle cx="305" cy="205" r="4" fill="#F9A8D4"/>
+              <text x="305" y="222" text-anchor="middle" class="map-label" font-weight="700" fill="white">VERONA</text>
+              <text x="305" y="231" text-anchor="middle" class="map-label" fill="rgba(249,168,212,.8)">Cerimonia Apertura</text>
+            </g>
+
+            <!-- Distance scale -->
+            <line x1="30" y1="390" x2="110" y2="390" stroke="rgba(255,255,255,.2)" stroke-width="1"/>
+            <line x1="30" y1="385" x2="30" y2="395" stroke="rgba(255,255,255,.2)" stroke-width="1"/>
+            <line x1="110" y1="385" x2="110" y2="395" stroke="rgba(255,255,255,.2)" stroke-width="1"/>
+            <text x="70" y="408" text-anchor="middle" fill="rgba(255,255,255,.25)" font-size="8" font-family="Space Grotesk">~50 km</text>
+            <text x="545" y="415" text-anchor="end" fill="rgba(255,255,255,.15)" font-size="7" font-family="Space Grotesk">Nord Italia — Schema semplificato</text>
+          </svg>
+        </div>
+
+        <!-- Venue info panel -->
+        <div class="lg:col-span-2 space-y-3" id="venue-list">
+          <!-- cards injected by JS -->
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PALA ITALIA SANTA GIULIA ===== -->
+  <section id="pala-italia" class="section relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-r from-sky-900/12 to-transparent pointer-events-none"></div>
+    <div class="max-w-7xl mx-auto relative z-10">
+      <div class="reveal mb-12">
+        <div class="divider bg-sky-400"></div>
+        <h2 class="font-black text-white mb-3" style="font-size:clamp(2rem,5vw,3.5rem)">
+          PalaItalia <span style="color:#38BDF8">Santa Giulia</span>
+        </h2>
+        <p class="text-white/50 text-lg max-w-2xl">L'arena olimpica dell'Hockey. Un'opera architettonica d'avanguardia nel cuore del distretto di Santa Giulia a Milano.</p>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-8 mb-8">
+        <!-- Specs -->
+        <div class="reveal glass glass-h rounded-3xl p-8">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="w-12 h-12 rounded-2xl bg-sky-500/15 border border-sky-500/25 flex items-center justify-center text-2xl">🏟️</div>
+            <div>
+              <h3 class="text-xl font-bold text-white">Specifiche Tecniche</h3>
+              <p class="text-sky-400 text-sm">Capacità e Infrastruttura</p>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="glass rounded-xl p-4 text-center">
+              <div class="text-2xl font-black text-sky-300">10.000+</div>
+              <div class="text-white/40 text-xs mt-1">Posti a sedere</div>
+            </div>
+            <div class="glass rounded-xl p-4 text-center">
+              <div class="text-2xl font-black text-sky-300">60×26m</div>
+              <div class="text-white/40 text-xs mt-1">Pista NHL</div>
+            </div>
+            <div class="glass rounded-xl p-4 text-center">
+              <div class="text-2xl font-black text-sky-300">−5°C</div>
+              <div class="text-white/40 text-xs mt-1">Ghiaccio ottimale</div>
+            </div>
+            <div class="glass rounded-xl p-4 text-center">
+              <div class="text-2xl font-black text-sky-300">2026</div>
+              <div class="text-white/40 text-xs mt-1">Anno inaugurazione</div>
+            </div>
+          </div>
+          <div class="space-y-3">
+            <div class="feature-line text-white/60 text-sm">Architettura d'avanguardia nel distretto Santa Giulia</div>
+            <div class="feature-line text-white/60 text-sm">Sistema di raffreddamento a CO₂ sostenibile</div>
+            <div class="feature-line text-white/60 text-sm">Copertura in legno lamellare — impatto visivo unico</div>
+            <div class="feature-line text-white/60 text-sm">Accesso diretto dalla Linea M4 metropolitana</div>
+            <div class="feature-line text-white/60 text-sm">Conversione post-olimpica per eventi sportivi e concerti</div>
+          </div>
+        </div>
+
+        <!-- Rink visual -->
+        <div class="reveal glass glass-h rounded-3xl p-8 flex flex-col">
+          <h3 class="text-lg font-bold text-white mb-4">Layout Arena — Vista Dall'Alto</h3>
+          <div class="flex-1 relative flex items-center justify-center">
+            <div class="w-full max-w-sm">
+              <!-- Arena layout SVG -->
+              <svg viewBox="0 0 360 300" class="w-full" aria-label="Layout PalaItalia Santa Giulia">
+                <!-- Outer arena -->
+                <ellipse cx="180" cy="150" rx="170" ry="140" fill="rgba(56,189,248,.04)" stroke="rgba(56,189,248,.15)" stroke-width="1.5"/>
+                <!-- Seating sections -->
+                <g opacity=".35" fill="rgba(56,189,248,.2)" stroke="rgba(56,189,248,.3)" stroke-width=".5">
+                  <ellipse cx="180" cy="150" rx="155" ry="125"/>
+                  <!-- Sector divisions -->
+                  <line x1="180" y1="25" x2="180" y2="275" stroke="rgba(255,255,255,.08)" stroke-width="1"/>
+                  <line x1="25" y1="150" x2="335" y2="150" stroke="rgba(255,255,255,.08)" stroke-width="1"/>
+                  <line x1="65" y1="60" x2="295" y2="240" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+                  <line x1="295" y1="60" x2="65" y2="240" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+                </g>
+                <!-- Ice surface -->
+                <rect x="80" y="75" width="200" height="150" rx="25" fill="rgba(186,230,253,.08)" stroke="rgba(56,189,248,.5)" stroke-width="2"/>
+                <!-- Rink lines -->
+                <line x1="180" y1="75" x2="180" y2="225" stroke="rgba(239,68,68,.4)" stroke-width="1.5"/>
+                <line x1="140" y1="75" x2="140" y2="225" stroke="rgba(56,189,248,.4)" stroke-width="1.5"/>
+                <line x1="220" y1="75" x2="220" y2="225" stroke="rgba(56,189,248,.4)" stroke-width="1.5"/>
+                <circle cx="180" cy="150" r="22" fill="none" stroke="rgba(239,68,68,.35)" stroke-width="1.5"/>
+                <circle cx="180" cy="150" r="3" fill="rgba(239,68,68,.8)"/>
+                <!-- Goals -->
+                <rect x="80" y="130" width="14" height="40" rx="5" fill="rgba(56,189,248,.1)" stroke="rgba(56,189,248,.5)" stroke-width="1.5"/>
+                <rect x="266" y="130" width="14" height="40" rx="5" fill="rgba(56,189,248,.1)" stroke="rgba(56,189,248,.5)" stroke-width="1.5"/>
+                <!-- Scoreboard position -->
+                <rect x="162" y="12" width="36" height="20" rx="4" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.15)" stroke-width="1"/>
+                <text x="180" y="25" text-anchor="middle" fill="rgba(56,189,248,.8)" font-size="6" font-family="Space Grotesk">SCOREBOARD</text>
+                <!-- Player benches -->
+                <rect x="142" y="226" width="30" height="8" rx="3" fill="rgba(56,189,248,.2)" stroke="rgba(56,189,248,.4)" stroke-width="1"/>
+                <rect x="188" y="226" width="30" height="8" rx="3" fill="rgba(219,39,119,.2)" stroke="rgba(219,39,119,.4)" stroke-width="1"/>
+                <text x="157" y="232" text-anchor="middle" fill="rgba(255,255,255,.4)" font-size="4.5" font-family="Space Grotesk">SQUADRA 1</text>
+                <text x="203" y="232" text-anchor="middle" fill="rgba(255,255,255,.4)" font-size="4.5" font-family="Space Grotesk">SQUADRA 2</text>
+                <!-- Label -->
+                <text x="180" y="296" text-anchor="middle" fill="rgba(255,255,255,.2)" font-size="8" font-family="Space Grotesk">PalaItalia Santa Giulia — 10.000+ spettatori</text>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Additional Milan venues -->
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="reveal glass glass-h rounded-2xl p-6">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="text-3xl">🏒</div>
+            <div>
+              <h3 class="font-bold text-white">PalaTrussardi</h3>
+              <span class="text-xs badge-hockey rounded-full px-2 py-0.5">Hockey — Partite</span>
+            </div>
+          </div>
+          <p class="text-white/50 text-sm leading-relaxed">Il rinnovato palazzetto del ghiaccio di Milano ospita le partite della fase a gironi del torneo maschile e femminile. Capienza di circa 5.000 posti, situato nel cuore della metropoli.</p>
+        </div>
+        <div class="reveal glass glass-h rounded-2xl p-6">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="text-3xl">⛸️</div>
+            <div>
+              <h3 class="font-bold text-white">Mediolanum Forum</h3>
+              <span class="text-xs badge-ski rounded-full px-2 py-0.5">Pattinaggio di Figura</span>
+            </div>
+          </div>
+          <p class="text-white/50 text-sm leading-relaxed">La storica arena di Assago — casa dell'Olimpia Milano — vibra per le coreografie dei migliori pattinatori del mondo. Una struttura già certificata per i grandi eventi internazionali.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== TUTTI I CLUSTER ===== -->
+  <section class="section">
+    <div class="max-w-7xl mx-auto">
+      <div class="reveal mb-12">
+        <div class="divider bg-gradient-to-r from-violet-400 to-pink-400"></div>
+        <h2 class="font-black text-white mb-3" style="font-size:clamp(2rem,5vw,3.5rem)">
+          Tutti i <span class="gt">Cluster</span>
+        </h2>
+        <p class="text-white/50 max-w-2xl text-lg">Sette aree geografiche, ognuna con identità e discipline uniche.</p>
+      </div>
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div class="reveal glass glass-h rounded-2xl p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-white text-lg">🏙️ Milano</h3>
+            <span class="text-xs badge-hockey rounded-full px-3 py-1">Ghiaccio Indoor</span>
+          </div>
+          <ul class="space-y-2 text-sm text-white/55">
+            <li class="flex gap-2"><span class="text-sky-400">▸</span>Hockey sul Ghiaccio (PalaItalia + PalaTrussardi)</li>
+            <li class="flex gap-2"><span class="text-sky-400">▸</span>Pattinaggio di Figura (Mediolanum Forum)</li>
+            <li class="flex gap-2"><span class="text-sky-400">▸</span>Short Track Speed Skating</li>
+          </ul>
+        </div>
+
+        <div class="reveal glass glass-h rounded-2xl p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-white text-lg">🏔️ Cortina d'Ampezzo</h3>
+            <span class="text-xs badge-ski rounded-full px-3 py-1">Sci &amp; Curling</span>
+          </div>
+          <ul class="space-y-2 text-sm text-white/55">
+            <li class="flex gap-2"><span class="text-violet-400">▸</span>Sci Alpino Femminile</li>
+            <li class="flex gap-2"><span class="text-violet-400">▸</span>Combinata Nordica (parziale)</li>
+            <li class="flex gap-2"><span class="text-violet-400">▸</span>Curling — Sede storica 1956</li>
+          </ul>
+        </div>
+
+        <div class="reveal glass glass-h rounded-2xl p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-white text-lg">⛷️ Bormio</h3>
+            <span class="text-xs badge-ski rounded-full px-3 py-1">Sci Maschile</span>
+          </div>
+          <ul class="space-y-2 text-sm text-white/55">
+            <li class="flex gap-2"><span class="text-amber-400">▸</span>Sci Alpino Maschile (Pista Stelvio)</li>
+            <li class="flex gap-2"><span class="text-amber-400">▸</span>Discesa libera e Super-G</li>
+            <li class="flex gap-2"><span class="text-amber-400">▸</span>Slalom gigante maschile</li>
+          </ul>
+        </div>
+
+        <div class="reveal glass glass-h rounded-2xl p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-white text-lg">🏂 Livigno</h3>
+            <span class="text-xs badge-snow rounded-full px-3 py-1">Snowboard</span>
+          </div>
+          <ul class="space-y-2 text-sm text-white/55">
+            <li class="flex gap-2"><span class="text-pink-400">▸</span>Snowboard (halfpipe, slopestyle, big air)</li>
+            <li class="flex gap-2"><span class="text-pink-400">▸</span>Sci Freestyle</li>
+            <li class="flex gap-2"><span class="text-pink-400">▸</span>Sci Alpinismo (debutto olimpico)</li>
+          </ul>
+        </div>
+
+        <div class="reveal glass glass-h rounded-2xl p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-white text-lg">🎯 Anterselva</h3>
+            <span class="text-xs badge-nordic rounded-full px-3 py-1">Biathlon</span>
+          </div>
+          <ul class="space-y-2 text-sm text-white/55">
+            <li class="flex gap-2"><span class="text-emerald-400">▸</span>Biathlon — tutte le prove</li>
+            <li class="flex gap-2"><span class="text-emerald-400">▸</span>Arena internazionale da 8.500 posti</li>
+            <li class="flex gap-2"><span class="text-emerald-400">▸</span>Poligono di tiro a 10m × 50 bersagli</li>
+          </ul>
+        </div>
+
+        <div class="reveal glass glass-h rounded-2xl p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-white text-lg">🌲 Val di Fiemme</h3>
+            <span class="text-xs badge-nordic rounded-full px-3 py-1">Fondo &amp; Salto</span>
+          </div>
+          <ul class="space-y-2 text-sm text-white/55">
+            <li class="flex gap-2"><span class="text-emerald-400">▸</span>Sci di Fondo — tutte le distanze</li>
+            <li class="flex gap-2"><span class="text-emerald-400">▸</span>Salto con gli sci</li>
+            <li class="flex gap-2"><span class="text-emerald-400">▸</span>Combinata Nordica</li>
+          </ul>
+        </div>
+
+        <div class="reveal glass glass-h rounded-2xl p-6 md:col-span-2 lg:col-span-1">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-white text-lg">🛷 Cortina · Sliding</h3>
+            <span class="text-xs badge-slide rounded-full px-3 py-1">Bob &amp; Slittino</span>
+          </div>
+          <ul class="space-y-2 text-sm text-white/55">
+            <li class="flex gap-2"><span class="text-amber-400">▸</span>Bob (2 e 4 equipaggio)</li>
+            <li class="flex gap-2"><span class="text-amber-400">▸</span>Skeleton</li>
+            <li class="flex gap-2"><span class="text-amber-400">▸</span>Slittino artificiale</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== MODAL ===== -->
+  <div id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby="modal-desc">
+    <div id="modal-box" class="glass" style="background:rgba(5,9,18,.97)">
+      <button id="modal-close" class="absolute top-4 right-4 w-8 h-8 glass rounded-full flex items-center justify-center text-white/60 hover:text-white transition-colors" aria-label="Chiudi">✕</button>
+      <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="py-16 px-6 border-t border-white/5">
+    <div class="max-w-7xl mx-auto">
+      <div class="grid md:grid-cols-3 gap-10 mb-10">
+        <div>
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-violet-600 flex items-center justify-center font-black text-xs">MC</div>
+            <span class="font-semibold text-white">Milano Cortina 2026</span>
+          </div>
+          <p class="text-white/35 text-sm leading-relaxed">Sedi Olimpiche — dal ghiaccio di Milano alle vette delle Dolomiti.</p>
+          <p class="text-white/20 text-xs mt-3">7 Cluster · 22.000 km² · 13 Sedi</p>
+        </div>
+        <div>
+          <h4 class="text-white font-semibold mb-4">Naviga</h4>
+          <nav class="space-y-2">
+            <a href="index.html"  class="block text-white/45 hover:text-white text-sm transition-colors">← I Giochi</a>
+            <a href="hockey.html" class="block text-white/45 hover:text-white text-sm transition-colors">🏒 Hockey Deep Dive</a>
+            <a href="venues.html" class="block text-sky-400 text-sm font-semibold">Sedi (questa pagina)</a>
+          </nav>
+        </div>
+        <div>
+          <h4 class="text-white font-semibold mb-4">Link Ufficiali</h4>
+          <div class="space-y-2">
+            <a href="https://www.milanocortina2026.olympics.com" target="_blank" rel="noopener" class="flex items-center gap-2 glass hover:bg-white/10 text-white/55 hover:text-white px-4 py-2.5 rounded-xl text-sm transition-all">🌐 Sito Ufficiale</a>
+            <a href="https://www.olympic.org" target="_blank" rel="noopener" class="flex items-center gap-2 glass hover:bg-white/10 text-white/55 hover:text-white px-4 py-2.5 rounded-xl text-sm transition-all">🏅 IOC</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===== SCRIPTS ===== -->
+  <script>
+    // ── CURSOR ──
+    const cur=document.getElementById('cursor'), dot=document.getElementById('cursor-dot');
+    let mx=0,my=0,dx=0,dy=0;
+    document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px';});
+    (function animDot(){dx+=(mx-dx)*.13;dy+=(my-dy)*.13;dot.style.left=dx+'px';dot.style.top=dy+'px';requestAnimationFrame(animDot);})();
+    document.querySelectorAll('a,button,[tabindex]').forEach(el=>{
+      el.addEventListener('mouseenter',()=>{cur.style.width='40px';cur.style.height='16px';cur.style.background='rgba(56,189,248,.2)';});
+      el.addEventListener('mouseleave',()=>{cur.style.width='22px';cur.style.height='9px';cur.style.background='#12121f';});
+    });
+
+    // ── HERO CANVAS ──
+    const hc=document.getElementById('hero-canvas'), hx=hc.getContext('2d');
+    function resizeH(){hc.width=innerWidth;hc.height=innerHeight;} resizeH(); addEventListener('resize',resizeH);
+    class Flake{constructor(){this.init();}init(){this.x=Math.random()*hc.width;this.y=Math.random()*hc.height-hc.height;this.s=Math.random()*3.5+1;this.vy=Math.random()*.4+.1;this.vx=(Math.random()-.5)*.15;this.o=Math.random()*.5+.08;this.r=Math.random()*Math.PI*2;this.dr=(Math.random()-.5)*.005;}step(){this.y+=this.vy;this.x+=this.vx;this.r+=this.dr;if(this.y>hc.height+20)this.init();}draw(){hx.save();hx.translate(this.x,this.y);hx.rotate(this.r);hx.globalAlpha=this.o;hx.strokeStyle='#7DD3FC';hx.lineWidth=.6;for(let i=0;i<6;i++){hx.beginPath();hx.moveTo(0,0);hx.lineTo(0,this.s*3);hx.moveTo(0,this.s);hx.lineTo(this.s*.7,this.s*1.7);hx.moveTo(0,this.s);hx.lineTo(-this.s*.7,this.s*1.7);hx.stroke();hx.rotate(Math.PI/3);}hx.restore();}}
+    const flakes=Array.from({length:80},()=>new Flake());
+    (function aH(){hx.clearRect(0,0,hc.width,hc.height);flakes.forEach(f=>{f.step();f.draw();});requestAnimationFrame(aH);})();
+
+    // ── VENUES DATA ──
+    const venues = {
+      milano: {
+        emoji:'🏒', name:'Milano', color:'#38BDF8',
+        discipline:'Hockey sul Ghiaccio · Pattinaggio · Short Track',
+        desc:'Il cuore olimpico per le discipline indoor. PalaItalia Santa Giulia, PalaTrussardi e il Mediolanum Forum di Assago formano il cluster più tecnologicamente avanzato dei Giochi.',
+        highlight:'Sede principale dell\'Hockey: pista NHL 60×26m',
+        badge:'badge-hockey', region:'Lombardia'
+      },
+      cortina: {
+        emoji:'🏔️', name:'Cortina d\'Ampezzo', color:'#A78BFA',
+        discipline:'Sci Alpino Femminile · Curling · Bob · Skeleton',
+        desc:'La "Regina delle Dolomiti" torna protagonista 70 anni dopo i Giochi del 1956. Le piste Olimpia delle Tofane e il Palazzo del Ghiaccio sono già nella leggenda.',
+        highlight:'Eredità olimpica: prima volta nel 1956',
+        badge:'badge-ski', region:'Veneto'
+      },
+      bormio: {
+        emoji:'⛷️', name:'Bormio', color:'#EAB308',
+        discipline:'Sci Alpino Maschile',
+        desc:'La pista Stelvio è considerata una delle più impegnative al mondo per lo sci alpino. Discese da brivido sulla più iconica pista della Valtellina.',
+        highlight:'Pista Stelvio — una delle più tecniche al mondo',
+        badge:'badge-ski', region:'Lombardia'
+      },
+      livigno: {
+        emoji:'🏂', name:'Livigno', color:'#F472B6',
+        discipline:'Snowboard · Sci Freestyle · Sci Alpinismo',
+        desc:'Il "Piccolo Tibet" a 1800m di altitudine ospita lo snowboard park e le discipline freestyle. Sede storica del debutto olimpico dello Sci Alpinismo.',
+        highlight:'Primo debutto olimpico dello Sci Alpinismo',
+        badge:'badge-snow', region:'Lombardia'
+      },
+      anterselva: {
+        emoji:'🎯', name:'Anterselva', color:'#34D399',
+        discipline:'Biathlon — tutte le prove',
+        desc:'La sede del biathlon più famosa d\'Europa. Ogni anno ospita la Coppa del Mondo: ora tocca all\'Olimpiade in questa valle mozzafiato dell\'Alto Adige.',
+        highlight:'8.500 spettatori — arena internazionale',
+        badge:'badge-nordic', region:'Alto Adige'
+      },
+      fiemme: {
+        emoji:'🌲', name:'Val di Fiemme', color:'#6EE7B7',
+        discipline:'Sci di Fondo · Salto con gli Sci · Combinata Nordica',
+        desc:'La piana di Tesero e il trampolino di Predazzo — luoghi che hanno già visto trionfare i più grandi fondisti e saltatori della storia olimpica mondiale.',
+        highlight:'Sede delle Nordic Championships storiche',
+        badge:'badge-nordic', region:'Trentino'
+      },
+      verona: {
+        emoji:'🏟️', name:'Verona', color:'#F9A8D4',
+        discipline:'Cerimonia di Apertura',
+        desc:'L\'Arena di Verona — uno dei monumenti più iconici d\'Italia — ospita la Cerimonia di Apertura dei XXV Giochi Olimpici Invernali davanti al mondo intero.',
+        highlight:'Arena di Verona — 2.000 anni di storia',
+        badge:'', region:'Veneto'
+      }
+    };
+
+    // Build venue list cards
+    const list = document.getElementById('venue-list');
+    Object.entries(venues).forEach(([id, v]) => {
+      const el = document.createElement('div');
+      el.className = `venue-card glass rounded-xl p-4 cursor-pointer`;
+      el.dataset.venue = id;
+      el.setAttribute('tabindex','0');
+      el.setAttribute('role','button');
+      el.setAttribute('aria-label', v.name + ' — ' + v.discipline);
+      el.innerHTML = `
+        <div class="flex items-center gap-3">
+          <span class="text-2xl">${v.emoji}</span>
+          <div class="flex-1 min-w-0">
+            <h4 class="font-bold text-white text-sm truncate">${v.name}</h4>
+            <p class="text-white/40 text-xs truncate">${v.discipline}</p>
+          </div>
+          <span class="text-white/25 text-xs">${v.region}</span>
+        </div>`;
+      list.appendChild(el);
+    });
+
+    // Modal data
+    function openModal(id) {
+      const v = venues[id];
+      if(!v) return;
+      const box = document.getElementById('modal-content');
+      box.innerHTML = `
+        <div class="text-5xl mb-4">${v.emoji}</div>
+        <h2 id="modal-title" class="text-2xl font-black text-white mb-1">${v.name}</h2>
+        <p id="modal-desc" class="text-xs mb-4" style="color:${v.color}">${v.region} · ${v.discipline}</p>
+        <p class="text-white/60 text-sm leading-relaxed mb-4">${v.desc}</p>
+        <div class="glass rounded-xl p-3 flex items-center gap-2">
+          <span style="color:${v.color}">★</span>
+          <span class="text-white/70 text-sm">${v.highlight}</span>
+        </div>`;
+      document.getElementById('modal').classList.add('open');
+    }
+
+    // Map pin clicks
+    document.querySelectorAll('.map-pin').forEach(pin => {
+      const id = pin.dataset.venue;
+      pin.addEventListener('click', () => openModal(id));
+      pin.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' ') openModal(id); });
+    });
+
+    // Venue list clicks
+    document.querySelectorAll('.venue-card').forEach(card => {
+      const id = card.dataset.venue;
+      card.addEventListener('click', () => { openModal(id); document.querySelectorAll('.venue-card').forEach(c=>c.classList.remove('active')); card.classList.add('active'); });
+      card.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' ') { openModal(id); } });
+    });
+
+    document.getElementById('modal-close').addEventListener('click', () => document.getElementById('modal').classList.remove('open'));
+    document.getElementById('modal').addEventListener('click', e => { if(e.target===document.getElementById('modal')) document.getElementById('modal').classList.remove('open'); });
+    document.addEventListener('keydown', e => { if(e.key==='Escape') document.getElementById('modal').classList.remove('open'); });
+
+    // ── GSAP ──
+    gsap.registerPlugin(ScrollTrigger);
+    gsap.timeline({defaults:{ease:'power3.out'}})
+      .from('#h-badge',{opacity:0,y:14,duration:.6})
+      .from('#h-title span',{opacity:0,y:60,stagger:.1,duration:.8},'-=.2')
+      .from('#h-sub',{opacity:0,y:16,duration:.6},'-=.4')
+      .from('#h-cta',{opacity:0,y:16,duration:.5},'-=.4');
+
+    document.querySelectorAll('.reveal').forEach((el,i)=>{
+      gsap.fromTo(el,{opacity:0,y:50},{opacity:1,y:0,duration:.8,ease:'power2.out',delay:(i%4)*.09,scrollTrigger:{trigger:el,start:'top 87%',toggleActions:'play none none none'}});
+    });
+
+    const nav=document.getElementById('navbar');
+    addEventListener('scroll',()=>nav.classList.toggle('nav-scrolled',scrollY>60));
+    document.getElementById('mob-btn').addEventListener('click',()=>document.getElementById('mob-menu').classList.toggle('hidden'));
+  </script>
+</body>
+</html>

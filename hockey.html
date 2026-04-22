@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="it" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Deep Dive Hockey — Milano Cortina 2026. Regolamento, fisica, attrezzatura e la scienza del ghiaccio.">
+  <title>Hockey sul Ghiaccio · Milano Cortina 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <style>
+    :root {
+      --c-blue:   #1E50D6;
+      --c-violet: #7C3AED;
+      --c-ice:    #BAE6FD;
+      --c-dark:   #050912;
+      --c-rasp:   #DB2777;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
+    html { scroll-behavior:smooth; }
+    body {
+      background: var(--c-dark);
+      color: #fff;
+      font-family:'Space Grotesk',sans-serif;
+      cursor: none;
+      overflow-x: hidden;
+    }
+
+    /* ── CURSOR (puck) + TRAIL ── */
+    #cursor {
+      width:22px; height:9px;
+      background:#12121f;
+      border:2px solid #BAE6FD;
+      border-radius:50%;
+      position:fixed; top:0; left:0;
+      pointer-events:none; z-index:9999;
+      transform:translate(-50%,-50%);
+      transition:width .2s,height .2s,background .2s;
+      box-shadow:0 0 12px rgba(56,189,248,.6);
+    }
+    #cursor-dot {
+      width:5px; height:5px;
+      background:#38BDF8; border-radius:50%;
+      position:fixed; top:0; left:0;
+      pointer-events:none; z-index:9998;
+      transform:translate(-50%,-50%);
+    }
+    #trail-canvas {
+      position:fixed; inset:0;
+      pointer-events:none; z-index:9997;
+    }
+    @media(hover:none){ #cursor,#cursor-dot,#trail-canvas{display:none;} body{cursor:auto;} }
+
+    /* ── GLASS ── */
+    .glass {
+      background:rgba(255,255,255,.05);
+      backdrop-filter:blur(18px);
+      -webkit-backdrop-filter:blur(18px);
+      border:1px solid rgba(255,255,255,.08);
+    }
+    .glass-h { transition:transform .3s,box-shadow .3s,background .3s,border-color .3s; }
+    .glass-h:hover {
+      transform:translateY(-5px);
+      background:rgba(255,255,255,.09);
+      border-color:rgba(56,189,248,.3);
+      box-shadow:0 20px 40px rgba(30,80,214,.2);
+    }
+
+    /* ── GRADIENTS ── */
+    .gt { background:linear-gradient(120deg,#38BDF8,#818CF8,#E879F9); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    .gt-ice { background:linear-gradient(120deg,#BAE6FD,#7DD3FC,#38BDF8); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+
+    /* ── AURORA BG ── */
+    .aurora {
+      background:
+        radial-gradient(ellipse 55% 35% at 10% 35%, rgba(30,80,214,.2) 0%, transparent 70%),
+        radial-gradient(ellipse 45% 30% at 90% 15%, rgba(56,189,248,.12) 0%, transparent 65%),
+        radial-gradient(ellipse 40% 30% at 50% 90%, rgba(124,58,237,.1) 0%, transparent 60%),
+        var(--c-dark);
+    }
+
+    /* ── NAV ── */
+    .nav-link::after { content:''; position:absolute; bottom:-3px; left:0; width:0; height:1px; background:#38BDF8; transition:width .3s; }
+    .nav-link:hover::after { width:100%; }
+    .nav-scrolled { background:rgba(5,9,18,.9)!important; backdrop-filter:blur(20px); border-bottom:1px solid rgba(255,255,255,.05); }
+
+    /* ── DIVIDER ── */
+    .divider { width:52px; height:3px; border-radius:2px; margin-bottom:1.25rem; }
+
+    /* ── HERO ── */
+    #hero { min-height:100svh; }
+
+    /* ── REVEAL ── */
+    .reveal { opacity:0; transform:translateY(44px); }
+
+    /* ── SECTION ── */
+    .section { padding:6rem 1.5rem; }
+    @media(max-width:640px){ .section{padding:4rem 1rem;} }
+
+    /* ── ORBS ── */
+    .orb { position:absolute; border-radius:50%; filter:blur(70px); opacity:.2; animation:float 8s ease-in-out infinite; }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-25px)} }
+
+    /* ── RULE CARD ── */
+    .rule-card { transition:all .35s; }
+    .rule-card:hover { transform:scale(1.03); }
+    .rule-icon { width:64px; height:64px; border-radius:18px; display:flex; align-items:center; justify-content:center; font-size:2rem; margin-bottom:1rem; }
+
+    /* ── FLIP CARD ── */
+    .flip-wrap { perspective:1000px; cursor:pointer; }
+    .flip-inner {
+      position:relative; width:100%; padding-bottom:130%;
+      transform-style:preserve-3d;
+      transition:transform .6s cubic-bezier(.4,0,.2,1);
+    }
+    .flip-wrap:hover .flip-inner,
+    .flip-wrap:focus .flip-inner { transform:rotateY(180deg); }
+    .flip-front, .flip-back {
+      position:absolute; inset:0;
+      backface-visibility:hidden;
+      -webkit-backface-visibility:hidden;
+      border-radius:20px; padding:1.5rem;
+      display:flex; flex-direction:column; justify-content:center;
+    }
+    .flip-back { transform:rotateY(180deg); }
+
+    /* ── RINK ZONES ── */
+    .zone-tip {
+      position:absolute; background:rgba(5,9,18,.95);
+      border:1px solid rgba(56,189,248,.4);
+      border-radius:10px; padding:10px 14px;
+      font-size:.75rem; color:#fff;
+      pointer-events:none; opacity:0;
+      transition:opacity .25s; z-index:10;
+      max-width:180px; line-height:1.5;
+    }
+
+    /* ── SPEED BAR ── */
+    .speed-bar-fill { height:100%; border-radius:4px; width:0; transition:width 1.2s cubic-bezier(.4,0,.2,1); }
+
+    /* ── TEMP SLIDER ── */
+    input[type=range] {
+      -webkit-appearance:none; width:100%; height:6px;
+      background:rgba(255,255,255,.1); border-radius:3px; outline:none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance:none; width:20px; height:20px;
+      background:linear-gradient(135deg,#38BDF8,#818CF8);
+      border-radius:50%; cursor:pointer;
+      box-shadow:0 0 8px rgba(56,189,248,.5);
+    }
+
+    /* ── PULSE DOT ── */
+    .pulse { animation:pulse-a 2s ease-in-out infinite; }
+    @keyframes pulse-a { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+    /* ── TEAM FLAGS ── */
+    .team-card { transition:all .3s; }
+    .team-card:hover { transform:translateY(-4px) scale(1.02); border-color:rgba(56,189,248,.4)!important; }
+  </style>
+</head>
+
+<body class="aurora">
+
+  <!-- ===== CURSOR + TRAIL CANVAS ===== -->
+  <div id="cursor" aria-hidden="true"></div>
+  <div id="cursor-dot" aria-hidden="true"></div>
+  <canvas id="trail-canvas" aria-hidden="true"></canvas>
+
+  <!-- ===== NAV ===== -->
+  <nav id="navbar" class="fixed top-0 inset-x-0 z-50 transition-all duration-300">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-500 to-violet-600 flex items-center justify-center text-xs font-black">MC</div>
+        <span class="font-semibold text-white">Milano Cortina <span class="text-sky-400">2026</span></span>
+      </a>
+      <div class="hidden md:flex items-center gap-8">
+        <a href="index.html" class="nav-link relative text-white/70 hover:text-white text-sm font-medium">I Giochi</a>
+        <a href="hockey.html" class="nav-link relative text-sky-400 text-sm font-bold">Hockey</a>
+        <a href="venues.html" class="nav-link relative text-white/70 hover:text-white text-sm font-medium">Sedi</a>
+      </div>
+      <a href="venues.html" class="hidden md:inline-flex items-center gap-2 glass hover:bg-white/10 text-white text-sm font-semibold px-5 py-2.5 rounded-full transition-all">
+        🗺️ Sedi Olimpiche
+      </a>
+      <button id="mob-btn" class="md:hidden p-2 text-white" aria-label="Menu">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+    </div>
+    <div id="mob-menu" class="hidden md:hidden glass border-t border-white/5 px-6 py-5 space-y-4">
+      <a href="index.html" class="block text-white/80 hover:text-white">I Giochi</a>
+      <a href="hockey.html" class="block text-sky-400 font-bold">Hockey</a>
+      <a href="venues.html" class="block text-white/80 hover:text-white">Sedi</a>
+    </div>
+  </nav>
+
+  <!-- ===== HERO ===== -->
+  <section id="hero" class="relative flex items-center justify-center overflow-hidden">
+    <canvas id="hero-canvas" class="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true"></canvas>
+
+    <div class="orb w-[450px] h-[450px] bg-sky-700"    style="top:5%;left:-5%;animation-delay:0s"></div>
+    <div class="orb w-[380px] h-[380px] bg-violet-700" style="top:40%;right:-8%;animation-delay:3s"></div>
+
+    <!-- Ice lines decoration -->
+    <div class="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
+      <div class="absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-red-500/20 to-transparent"></div>
+      <div class="absolute left-1/3 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-sky-500/15 to-transparent"></div>
+      <div class="absolute left-2/3 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-sky-500/15 to-transparent"></div>
+    </div>
+
+    <div class="relative z-10 text-center max-w-5xl mx-auto px-6 pt-24 pb-20">
+      <div id="h-badge" class="inline-flex items-center gap-2 glass rounded-full px-4 py-2 text-sm text-sky-300 mb-6">
+        <span class="w-2 h-2 bg-sky-400 rounded-full animate-pulse" aria-hidden="true"></span>
+        Deep Dive · Disciplina Olimpica
+      </div>
+
+      <h1 id="h-title" class="font-black leading-none mb-5" style="font-size:clamp(3rem,11vw,8rem)">
+        <span class="block text-white">HOCKEY</span>
+        <span class="block gt-ice">SUL GHIACCIO</span>
+      </h1>
+
+      <p id="h-sub" class="text-white/50 text-xl max-w-2xl mx-auto leading-relaxed mb-10">
+        Velocità massima, collisioni, strategia militare e la fisica del puck. Il culmine degli sport di squadra invernali al PalaItalia Santa Giulia.
+      </p>
+
+      <!-- Quick stats bar -->
+      <div id="h-stats" class="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-2xl mx-auto mb-10">
+        <div class="glass rounded-xl py-3 px-2 text-center">
+          <div class="text-sky-300 font-black text-2xl">45</div>
+          <div class="text-white/40 text-xs mt-0.5">km/h max</div>
+        </div>
+        <div class="glass rounded-xl py-3 px-2 text-center">
+          <div class="text-sky-300 font-black text-2xl">170+</div>
+          <div class="text-white/40 text-xs mt-0.5">km/h puck</div>
+        </div>
+        <div class="glass rounded-xl py-3 px-2 text-center">
+          <div class="text-sky-300 font-black text-2xl">3×20</div>
+          <div class="text-white/40 text-xs mt-0.5">min periodi</div>
+        </div>
+        <div class="glass rounded-xl py-3 px-2 text-center">
+          <div class="text-sky-300 font-black text-2xl">6</div>
+          <div class="text-white/40 text-xs mt-0.5">giocatori/squadra</div>
+        </div>
+      </div>
+
+      <div id="h-cta" class="flex flex-wrap justify-center gap-4">
+        <a href="#regolamento" class="group flex items-center gap-2 bg-gradient-to-r from-sky-500 to-violet-600 text-white font-bold px-8 py-4 rounded-full hover:scale-105 hover:shadow-[0_8px_32px_rgba(56,189,248,.35)] transition-all">
+          📜 Regolamento
+          <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </a>
+        <a href="#equipment" class="glass text-white font-semibold px-8 py-4 rounded-full hover:bg-white/10 transition-all">
+          🥅 Attrezzatura
+        </a>
+      </div>
+    </div>
+
+    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 z-10" style="animation:scroll-b 2s ease-in-out infinite">
+      <div class="flex flex-col items-center gap-1 text-white/25 text-xs">
+        <span class="uppercase tracking-[.2em]">Scorri</span>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+      </div>
+    </div>
+    <style>@keyframes scroll-b{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,9px)}}</style>
+  </section>
+
+  <!-- ===== FISIOLOGIA ===== -->
+  <section class="section">
+    <div class="max-w-7xl mx-auto">
+      <div class="reveal mb-14">
+        <div class="divider bg-gradient-to-r from-sky-400 to-violet-500"></div>
+        <h2 class="font-black text-white mb-3" style="font-size:clamp(2rem,5vw,3.5rem)">
+          Fisiologia della <span class="gt">Performance</span>
+        </h2>
+        <p class="text-white/50 max-w-2xl text-lg">L'hockey è uno sport di potenza esplosiva e resistenza anaerobica. Ogni secondo conta.</p>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-5 mb-10">
+        <div class="reveal glass glass-h rounded-2xl p-6">
+          <div class="rule-icon bg-sky-500/15 border border-sky-500/20">⚡</div>
+          <h3 class="font-bold text-white text-lg mb-2">Sistema dei Cambi</h3>
+          <p class="text-white/50 text-sm leading-relaxed">Uno sforzo massimale dura <strong class="text-white">45–60 secondi</strong>. Superato questo limite, l'acido lattico compromette velocità e decisioni. Le squadre ruotano <strong class="text-white">4 linee d'attacco</strong> e <strong class="text-white">3 coppie difensive</strong> con precisione militare.</p>
+        </div>
+        <div class="reveal glass glass-h rounded-2xl p-6">
+          <div class="rule-icon bg-violet-500/15 border border-violet-500/20">💨</div>
+          <h3 class="font-bold text-white text-lg mb-2">Velocità Estrema</h3>
+          <p class="text-white/50 text-sm leading-relaxed">I giocatori raggiungono i <strong class="text-white">45 km/h</strong>. Il puck in slap shot supera i <strong class="text-white">170 km/h</strong>. Gestire queste velocità richiede una visione periferica eccezionale e riflessi sub-consci allenati per anni.</p>
+        </div>
+        <div class="reveal glass glass-h rounded-2xl p-6">
+          <div class="rule-icon bg-pink-500/15 border border-pink-500/20">💥</div>
+          <h3 class="font-bold text-white text-lg mb-2">Collisioni &amp; Impatto</h3>
+          <p class="text-white/50 text-sm leading-relaxed">Le protezioni devono disperdere impatti da <strong class="text-white">centinaia di kg di forza</strong>. Schiume a densità differenziata e inserti in plastica rigida trasformano ogni body-check in uno spettacolo di ingegneria dei materiali.</p>
+        </div>
+      </div>
+
+      <!-- Speed visualization bars -->
+      <div class="reveal glass rounded-3xl p-8">
+        <h3 class="text-lg font-bold text-white mb-6">Velocità Comparative <span class="text-white/40 font-normal text-sm">(km/h)</span></h3>
+        <div class="space-y-5" id="speed-bars">
+          <div data-val="100" data-label="Puck — Slap shot" data-max="170" data-actual="170+" data-color="linear-gradient(90deg,#38BDF8,#818CF8)">
+            <div class="flex justify-between mb-1.5"><span class="text-white/75 text-sm">Puck — Slap shot</span><span class="text-sky-300 font-bold text-sm">170+ km/h</span></div>
+            <div class="h-2 bg-white/8 rounded-full overflow-hidden"><div class="speed-bar-fill" style="background:linear-gradient(90deg,#38BDF8,#818CF8)"></div></div>
+          </div>
+          <div data-val="65">
+            <div class="flex justify-between mb-1.5"><span class="text-white/75 text-sm">Puck — Wrist shot</span><span class="text-sky-300 font-bold text-sm">120 km/h</span></div>
+            <div class="h-2 bg-white/8 rounded-full overflow-hidden"><div class="speed-bar-fill" style="background:linear-gradient(90deg,#818CF8,#E879F9)"></div></div>
+          </div>
+          <div data-val="45">
+            <div class="flex justify-between mb-1.5"><span class="text-white/75 text-sm">Giocatore su pattini</span><span class="text-sky-300 font-bold text-sm">45 km/h</span></div>
+            <div class="h-2 bg-white/8 rounded-full overflow-hidden"><div class="speed-bar-fill" style="background:linear-gradient(90deg,#E879F9,#DB2777)"></div></div>
+          </div>
+          <div data-val="27">
+            <div class="flex justify-between mb-1.5"><span class="text-white/75 text-sm">Portiere in scatto</span><span class="text-sky-300 font-bold text-sm">~25 km/h</span></div>
+            <div class="h-2 bg-white/8 rounded-full overflow-hidden"><div class="speed-bar-fill" style="background:linear-gradient(90deg,#DB2777,#9F1239)"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== REGOLAMENTO ===== -->
+  <section id="regolamento" class="section relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-b from-transparent via-sky-900/8 to-transparent pointer-events-none"></div>
+    <div class="max-w-7xl mx-auto relative z-10">
+      <div class="reveal mb-14">
+        <div class="divider bg-sky-400"></div>
+        <h2 class="font-black text-white mb-3" style="font-size:clamp(2rem,5vw,3.5rem)">
+          Regolamento <span class="gt">Standard NHL</span>
+        </h2>
+        <p class="text-white/50 max-w-2xl text-lg">Milano 2026 adotta le dimensioni NHL — 4 metri in meno cambiano completamente il gioco.</p>
+      </div>
+
+      <!-- NHL vs IIHF comparison -->
+      <div class="reveal glass rounded-3xl p-8 mb-10 relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-64 h-64 bg-sky-500/5 rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+        <h3 class="text-lg font-bold text-white mb-6">NHL vs Standard Internazionale IIHF</h3>
+        <div class="grid md:grid-cols-2 gap-8">
+          <!-- NHL -->
+          <div>
+            <div class="flex items-center gap-2 mb-4">
+              <div class="w-8 h-8 rounded-lg bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-sm font-black text-sky-300">NHL</div>
+              <span class="text-white font-semibold">Standard NHL <span class="text-sky-400">(Milano 2026)</span></span>
+            </div>
+            <div class="relative h-28 glass rounded-2xl p-3" style="background:rgba(56,189,248,.06)">
+              <svg viewBox="0 0 280 90" class="w-full h-full" aria-label="Pista NHL 60x26m">
+                <rect x="4" y="4" width="272" height="82" rx="15" fill="rgba(56,189,248,.04)" stroke="#38BDF8" stroke-width="1.5"/>
+                <line x1="140" y1="4" x2="140" y2="86" stroke="rgba(239,68,68,.5)" stroke-width="1.5"/>
+                <line x1="90" y1="4" x2="90" y2="86" stroke="#38BDF8" stroke-width="1.5" opacity=".5"/>
+                <line x1="190" y1="4" x2="190" y2="86" stroke="#38BDF8" stroke-width="1.5" opacity=".5"/>
+                <rect x="4" y="31" width="16" height="28" rx="4" fill="rgba(56,189,248,.1)" stroke="#38BDF8" stroke-width="1"/>
+                <rect x="260" y="31" width="16" height="28" rx="4" fill="rgba(56,189,248,.1)" stroke="#38BDF8" stroke-width="1"/>
+                <circle cx="140" cy="45" r="20" fill="none" stroke="rgba(239,68,68,.35)" stroke-width="1"/>
+                <text x="140" y="48" text-anchor="middle" fill="rgba(255,255,255,.6)" font-size="8">60×26m</text>
+              </svg>
+            </div>
+            <p class="text-white/45 text-xs mt-2">4 m più stretta → gioco più verticale e fisico. Ogni sponda conta. Nessun posto dove nascondersi.</p>
+          </div>
+          <!-- IIHF -->
+          <div>
+            <div class="flex items-center gap-2 mb-4">
+              <div class="w-8 h-8 rounded-lg bg-violet-500/20 border border-violet-500/30 flex items-center justify-center text-xs font-black text-violet-300">INT</div>
+              <span class="text-white font-semibold">Standard IIHF <span class="text-white/40">(Classico)</span></span>
+            </div>
+            <div class="relative h-28 glass rounded-2xl p-3" style="background:rgba(124,58,237,.06)">
+              <svg viewBox="0 0 280 90" class="w-full h-full" aria-label="Pista IIHF 60x30m">
+                <rect x="4" y="2" width="272" height="86" rx="15" fill="rgba(124,58,237,.04)" stroke="#7C3AED" stroke-width="1.5"/>
+                <line x1="140" y1="2" x2="140" y2="88" stroke="rgba(239,68,68,.4)" stroke-width="1.5"/>
+                <line x1="90" y1="2" x2="90" y2="88" stroke="#7C3AED" stroke-width="1.5" opacity=".5"/>
+                <line x1="190" y1="2" x2="190" y2="88" stroke="#7C3AED" stroke-width="1.5" opacity=".5"/>
+                <rect x="4" y="28" width="16" height="34" rx="4" fill="rgba(124,58,237,.1)" stroke="#7C3AED" stroke-width="1"/>
+                <rect x="260" y="28" width="16" height="34" rx="4" fill="rgba(124,58,237,.1)" stroke="#7C3AED" stroke-width="1"/>
+                <circle cx="140" cy="45" r="22" fill="none" stroke="rgba(239,68,68,.3)" stroke-width="1"/>
+                <text x="140" y="48" text-anchor="middle" fill="rgba(255,255,255,.5)" font-size="8">60×30m</text>
+              </svg>
+            </div>
+            <p class="text-white/45 text-xs mt-2">4 m più larga → più spazio per il gioco europeo veloce e tecnico. Meno body-check, più creatività.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rules cards -->
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div class="reveal rule-card glass glass-h rounded-2xl p-5">
+          <div class="rule-icon bg-blue-500/15 border border-blue-500/20">🚫</div>
+          <h3 class="font-bold text-white mb-2">Fuorigioco</h3>
+          <p class="text-white/50 text-xs leading-relaxed">Nessun giocatore può precedere il puck nella zona d'attacco (oltre la linea blu). La tecnologia <strong class="text-sky-300">Video Goal Judge</strong> analizza i centimetri contestati.</p>
+        </div>
+        <div class="reveal rule-card glass glass-h rounded-2xl p-5">
+          <div class="rule-icon bg-sky-500/15 border border-sky-500/20">🔴</div>
+          <h3 class="font-bold text-white mb-2">Icing</h3>
+          <p class="text-white/50 text-xs leading-relaxed">Se un giocatore lancia il puck da oltre la linea rossa fino in fondo alla pista avversaria senza che nessuno lo tocchi, viene fischiato l'icing. Rimessa nel territorio difensivo.</p>
+        </div>
+        <div class="reveal rule-card glass glass-h rounded-2xl p-5">
+          <div class="rule-icon bg-amber-500/15 border border-amber-500/20">⚖️</div>
+          <h3 class="font-bold text-white mb-2">Power Play</h3>
+          <p class="text-white/50 text-xs leading-relaxed">Un'espulsione crea una <strong class="text-sky-300">superiorità numerica (5v4)</strong>. Le strategie "ombrello" o "unità PP" sono le più spettacolari: il destino di una partita si decide spesso qui.</p>
+        </div>
+        <div class="reveal rule-card glass glass-h rounded-2xl p-5">
+          <div class="rule-icon bg-red-500/15 border border-red-500/20">🛡️</div>
+          <h3 class="font-bold text-white mb-2">Penalty Kill</h3>
+          <p class="text-white/50 text-xs leading-relaxed">La squadra in inferiorità numerica <strong class="text-sky-300">(4v5)</strong> adotta la strategia "diamante" per bloccare ogni linea di passaggio. Un gol in inferiorità è statisticamente devastante per il morale avversario.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== RINK INTERATTIVO ===== -->
+  <section id="rink-section" class="section">
+    <div class="max-w-7xl mx-auto">
+      <div class="reveal mb-12">
+        <div class="divider bg-gradient-to-r from-sky-400 to-violet-500"></div>
+        <h2 class="font-black text-white mb-3" style="font-size:clamp(2rem,5vw,3.5rem)">
+          Anatomia della <span class="gt">Pista</span>
+        </h2>
+        <p class="text-white/50 text-lg max-w-2xl">Clicca o tocca le zone per scoprire il ruolo tattico di ogni area del ghiaccio.</p>
+      </div>
+
+      <div class="reveal glass rounded-3xl p-6 md:p-10 relative">
+        <div id="zone-tooltip" class="zone-tip" role="tooltip"></div>
+        <svg id="rink-svg" viewBox="0 0 720 440" class="w-full max-w-3xl mx-auto block" aria-label="Pista da hockey interattiva" role="img">
+          <!-- Ice surface -->
+          <rect x="8" y="8" width="704" height="424" rx="60" fill="rgba(186,230,253,.04)" stroke="rgba(56,189,248,.3)" stroke-width="2.5"/>
+
+          <!-- Goal creases -->
+          <g id="zone-crease-l" class="cursor-pointer" data-tip="Crease (Area di porta sinistra) — Solo il portiere può occuparla. Se un attaccante è nel crease al momento del gol, viene annullato." tabindex="0" role="button" aria-label="Area di porta sinistra">
+            <rect x="8" y="158" width="50" height="124" rx="12" fill="rgba(56,189,248,.1)" stroke="rgba(56,189,248,.5)" stroke-width="2"/>
+            <rect x="8" y="178" width="32" height="84" rx="8" fill="rgba(56,189,248,.15)" stroke="#38BDF8" stroke-width="1.5"/>
+          </g>
+          <g id="zone-crease-r" class="cursor-pointer" data-tip="Crease (Area di porta destra) — La zona sacra del portiere. Ogni invasione può portare all'annullamento del gol o a un penalty." tabindex="0" role="button" aria-label="Area di porta destra">
+            <rect x="662" y="158" width="50" height="124" rx="12" fill="rgba(56,189,248,.1)" stroke="rgba(56,189,248,.5)" stroke-width="2"/>
+            <rect x="680" y="178" width="32" height="84" rx="8" fill="rgba(56,189,248,.15)" stroke="#38BDF8" stroke-width="1.5"/>
+          </g>
+
+          <!-- Defensive zones -->
+          <g id="zone-def-l" class="cursor-pointer" data-tip="Zona Difensiva — Nei 60m di ghiaccio: questa è la metà campo da proteggere. Il portiere comunica continuamente la posizione del puck agli altri giocatori." tabindex="0" role="button" aria-label="Zona difensiva sinistra">
+            <rect x="8" y="8" width="228" height="424" rx="60" fill="rgba(56,189,248,.03)" stroke="none"/>
+            <rect x="8" y="8" width="228" height="424" rx="60" fill="url(#gradDef)" opacity=".5"/>
+          </g>
+          <!-- Offensive zone right -->
+          <g id="zone-att-r" class="cursor-pointer" data-tip="Zona Offensiva — Qui nasce il gioco d'attacco. Le combinazioni di passaggi rapidi (tape-to-tape) creano le occasioni da gol. Il centravanti organizza i movimenti." tabindex="0" role="button" aria-label="Zona offensiva destra">
+            <rect x="484" y="8" width="228" height="424" rx="60" fill="rgba(219,39,119,.03)" stroke="none"/>
+            <rect x="484" y="8" width="228" height="424" rx="60" fill="url(#gradAtt)" opacity=".5"/>
+          </g>
+
+          <!-- Blue lines -->
+          <line id="zone-blue-l" x1="236" y1="8" x2="236" y2="432" stroke="rgba(56,189,248,.7)" stroke-width="5" class="cursor-pointer" data-tip="Linea Blu — Confine della zona d'attacco. Il puck DEVE entrare prima dei giocatori, altrimenti è fuorigioco. Determina tutte le strategie offensive." tabindex="0" role="button" aria-label="Linea blu sinistra"/>
+          <line id="zone-blue-r" x1="484" y1="8" x2="484" y2="432" stroke="rgba(56,189,248,.7)" stroke-width="5" class="cursor-pointer" data-tip="Linea Blu — Ogni transizione difesa-attacco passa da qui. Tenere il puck 'in zona' è fondamentale: se escede, il play viene azzerato." tabindex="0" role="button" aria-label="Linea blu destra"/>
+
+          <!-- Center red line -->
+          <line id="zone-center" x1="360" y1="8" x2="360" y2="432" stroke="rgba(239,68,68,.65)" stroke-width="4" class="cursor-pointer" data-tip="Linea Rossa Centrale — Usata per la regola dell'icing. Se il puck attraversa entrambe le linee (rossa + fondo) senza che nessuno lo tocchi: rimessa difensiva." tabindex="0" role="button" aria-label="Linea rossa centrale"/>
+
+          <!-- Center circle -->
+          <circle id="zone-cc" cx="360" cy="220" r="70" fill="none" stroke="rgba(239,68,68,.5)" stroke-width="2.5" class="cursor-pointer" data-tip="Cerchio di Centro — Il faceoff iniziale di ogni periodo e dopo ogni gol avviene qui. I due centravanti si sfidano per il possesso del puck." tabindex="0" role="button" aria-label="Cerchio centrale"/>
+          <circle cx="360" cy="220" r="5" fill="rgba(239,68,68,.9)"/>
+
+          <!-- Faceoff circles -->
+          <circle cx="165" cy="140" r="55" fill="none" stroke="rgba(56,189,248,.35)" stroke-width="2"/>
+          <circle cx="165" cy="300" r="55" fill="none" stroke="rgba(56,189,248,.35)" stroke-width="2"/>
+          <circle cx="555" cy="140" r="55" fill="none" stroke="rgba(56,189,248,.35)" stroke-width="2"/>
+          <circle cx="555" cy="300" r="55" fill="none" stroke="rgba(56,189,248,.35)" stroke-width="2"/>
+          <circle cx="165" cy="140" r="5" fill="rgba(56,189,248,.7)"/>
+          <circle cx="165" cy="300" r="5" fill="rgba(56,189,248,.7)"/>
+          <circle cx="555" cy="140" r="5" fill="rgba(56,189,248,.7)"/>
+          <circle cx="555" cy="300" r="5" fill="rgba(56,189,248,.7)"/>
+
+          <!-- Zone labels -->
+          <text x="122" y="230" text-anchor="middle" fill="rgba(56,189,248,.35)" font-size="13" font-family="Space Grotesk" font-weight="600">DIFESA</text>
+          <text x="360" y="230" text-anchor="middle" fill="rgba(239,68,68,.35)" font-size="13" font-family="Space Grotesk" font-weight="600">NEUTRALE</text>
+          <text x="598" y="230" text-anchor="middle" fill="rgba(219,39,119,.35)" font-size="13" font-family="Space Grotesk" font-weight="600">ATTACCO</text>
+
+          <!-- Animated puck -->
+          <circle id="svg-puck" cx="360" cy="220" r="9" fill="#12121f" stroke="#BAE6FD" stroke-width="2"/>
+
+          <defs>
+            <linearGradient id="gradDef" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="rgba(56,189,248,.12)"/>
+              <stop offset="100%" stop-color="rgba(56,189,248,0)"/>
+            </linearGradient>
+            <linearGradient id="gradAtt" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="rgba(219,39,119,0)"/>
+              <stop offset="100%" stop-color="rgba(219,39,119,.1)"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <p class="text-white/25 text-xs text-center mt-4">← Tocca le zone per dettagli tattici →</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== EQUIPMENT ===== -->
+  <section id="equipment" class="section">
+    <div class="max-w-7xl mx-auto">
+      <div class="reveal mb-14">
+        <div class="divider bg-gradient-to-r from-violet-400 to-pink-400"></div>
+        <h2 class="font-black text-white mb-3" style="font-size:clamp(2rem,5vw,3.5rem)">
+          Ingegneria <span class="gt">dell'Attrezzatura</span>
+        </h2>
+        <p class="text-white/50 text-lg max-w-2xl">Passa sopra con il mouse (o tocca) le carte per scoprire la scienza dietro ogni equipaggiamento.</p>
+      </div>
+
+      <div class="grid sm:grid-cols-2 md:grid-cols-4 gap-6">
+        <!-- Pattini -->
+        <div class="flip-wrap reveal" tabindex="0" aria-label="Pattini — Clicca per dettagli tecnici">
+          <div class="flip-inner">
+            <div class="flip-front glass" style="background:linear-gradient(135deg,rgba(56,189,248,.12),rgba(124,58,237,.08))">
+              <div class="text-6xl mb-4 text-center">⛸️</div>
+              <h3 class="text-xl font-black text-white text-center">Pattini</h3>
+              <p class="text-white/45 text-xs text-center mt-2">Compositi<br>Termo-formabili</p>
+              <div class="mt-6 text-center text-xs text-sky-400/60 glass rounded-full px-3 py-1 mx-auto w-fit">Ruota →</div>
+            </div>
+            <div class="flip-back" style="background:linear-gradient(135deg,rgba(56,189,248,.18),rgba(30,80,214,.25));border:1px solid rgba(56,189,248,.25)">
+              <h3 class="text-base font-black text-sky-300 mb-3">⛸️ Ingegneria Pattini</h3>
+              <p class="text-white/70 text-xs leading-relaxed mb-3">Realizzati in <strong class="text-white">compositi termo-formabili</strong> che si modellano perfettamente al piede dell'atleta ad alta temperatura.</p>
+              <p class="text-white/70 text-xs leading-relaxed">La lama ha un <strong class="text-white">"profilo"</strong> specifico: lama corta = maggiore manovrabilità; lama lunga = maggiore stabilità in velocità. La scelta dipende dal ruolo del giocatore.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stick -->
+        <div class="flip-wrap reveal" tabindex="0" aria-label="Bastone — Clicca per dettagli tecnici">
+          <div class="flip-inner">
+            <div class="flip-front glass" style="background:linear-gradient(135deg,rgba(124,58,237,.12),rgba(219,39,119,.08))">
+              <div class="text-6xl mb-4 text-center">🏒</div>
+              <h3 class="text-xl font-black text-white text-center">Bastone</h3>
+              <p class="text-white/45 text-xs text-center mt-2">Fibra di Carbonio<br>+ Flex System</p>
+              <div class="mt-6 text-center text-xs text-sky-400/60 glass rounded-full px-3 py-1 mx-auto w-fit">Ruota →</div>
+            </div>
+            <div class="flip-back" style="background:linear-gradient(135deg,rgba(124,58,237,.18),rgba(219,39,119,.15));border:1px solid rgba(124,58,237,.25)">
+              <h3 class="text-base font-black text-violet-300 mb-3">🏒 Il Sistema Flex</h3>
+              <p class="text-white/70 text-xs leading-relaxed mb-3">Costruito in <strong class="text-white">fibra di carbonio</strong> con trame differenziate a 0° e 45°. Il parametro chiave è il <strong class="text-white">Flex</strong>: la rigidità dello shaft.</p>
+              <p class="text-white/70 text-xs leading-relaxed">Il bastone agisce come un <strong class="text-white">arco</strong>: immagazzina energia potenziale durante il caricamento del tiro e la rilascia cineticamente sul puck. Flex basso = tiro più potente ma meno controllo.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Casco -->
+        <div class="flip-wrap reveal" tabindex="0" aria-label="Casco — Clicca per dettagli tecnici">
+          <div class="flip-inner">
+            <div class="flip-front glass" style="background:linear-gradient(135deg,rgba(234,179,8,.12),rgba(249,115,22,.08))">
+              <div class="text-6xl mb-4 text-center">🪖</div>
+              <h3 class="text-xl font-black text-white text-center">Casco</h3>
+              <p class="text-white/45 text-xs text-center mt-2">Multi-densità<br>HECC Certified</p>
+              <div class="mt-6 text-center text-xs text-sky-400/60 glass rounded-full px-3 py-1 mx-auto w-fit">Ruota →</div>
+            </div>
+            <div class="flip-back" style="background:linear-gradient(135deg,rgba(234,179,8,.18),rgba(249,115,22,.15));border:1px solid rgba(234,179,8,.25)">
+              <h3 class="text-base font-black text-amber-300 mb-3">🪖 Protezione Cranio</h3>
+              <p class="text-white/70 text-xs leading-relaxed mb-3">Certificazione <strong class="text-white">HECC</strong> (Hockey Equipment Certification Council). La shell esterna è in ABS rigido; il liner interno è in <strong class="text-white">schiuma VN multi-densità</strong>.</p>
+              <p class="text-white/70 text-xs leading-relaxed">Deve resistere a impatti da 170+ km/h del puck. La griglia facciale (cage) è in acciaio galvanizzato per i giocatori, mentre i portieri usano maschere in fibra di vetro-kevlar.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Puck -->
+        <div class="flip-wrap reveal" tabindex="0" aria-label="Puck — Clicca per dettagli tecnici">
+          <div class="flip-inner">
+            <div class="flip-front glass" style="background:linear-gradient(135deg,rgba(56,189,248,.08),rgba(14,165,233,.12))">
+              <div class="text-6xl mb-4 text-center">🏴</div>
+              <h3 class="text-xl font-black text-white text-center">Puck</h3>
+              <p class="text-white/45 text-xs text-center mt-2">Gomma Vulcanizzata<br>170g · −18°C pre-gara</p>
+              <div class="mt-6 text-center text-xs text-sky-400/60 glass rounded-full px-3 py-1 mx-auto w-fit">Ruota →</div>
+            </div>
+            <div class="flip-back" style="background:linear-gradient(135deg,rgba(14,165,233,.18),rgba(56,189,248,.15));border:1px solid rgba(56,189,248,.25)">
+              <h3 class="text-base font-black text-sky-300 mb-3">🏴 Il Disco Perfetto</h3>
+              <p class="text-white/70 text-xs leading-relaxed mb-3">Composto da <strong class="text-white">gomma vulcanizzata</strong>, pesa esattamente <strong class="text-white">170 grammi</strong> e misura 76mm di diametro × 25mm di spessore.</p>
+              <p class="text-white/70 text-xs leading-relaxed">Prima della partita viene conservato a <strong class="text-white">−18°C</strong>: il freddo riduce l'elasticità, impedendo rimbalzi incontrollati. Ogni disco viene sostituito dopo 10–15 minuti di gioco intenso.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SCIENZA DEL GHIACCIO ===== -->
+  <section id="science" class="section relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-r from-sky-900/10 to-transparent pointer-events-none"></div>
+    <div class="max-w-7xl mx-auto relative z-10">
+      <div class="reveal mb-14">
+        <div class="divider bg-sky-400"></div>
+        <h2 class="font-black text-white mb-3" style="font-size:clamp(2rem,5vw,3.5rem)">
+          La Scienza <span class="gt-ice">del Ghiaccio</span>
+        </h2>
+        <p class="text-white/50 text-lg max-w-2xl">La differenza tra oro e argento può dipendere da mezzo grado di temperatura. La chimica del ghiaccio è una disciplina in sé.</p>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-8 mb-10">
+        <!-- Temperature slider -->
+        <div class="reveal glass rounded-3xl p-8">
+          <h3 class="text-lg font-bold text-white mb-2">Temperatura Superficiale del Ghiaccio</h3>
+          <p class="text-white/40 text-xs mb-6">Regola la temperatura per vedere l'effetto sulla qualità del ghiaccio:</p>
+          <div class="flex items-center gap-4 mb-4">
+            <span class="text-sky-300 font-black text-3xl" id="temp-display">-5°C</span>
+            <div class="flex-1">
+              <input type="range" id="temp-slider" min="-10" max="-1" value="-5" step="1" aria-label="Temperatura ghiaccio" class="w-full">
+            </div>
+          </div>
+          <div id="temp-feedback" class="glass rounded-xl p-4 text-sm transition-all">
+            <span class="text-sky-300 font-bold">✓ Ghiaccio Ottimale</span>
+            <p class="text-white/55 mt-1">Temperatura ideale tra −5°C e −6°C. Superficie dura e liscia, perfetta per la velocità del puck e la risposta dei pattini.</p>
+          </div>
+          <div class="mt-4 grid grid-cols-3 gap-2 text-xs text-center">
+            <div class="glass rounded-lg py-2 px-1"><div class="text-red-400 font-bold">−1°C</div><div class="text-white/35 mt-0.5">Lento &amp; umido</div></div>
+            <div class="glass rounded-lg py-2 px-1 border border-sky-500/30"><div class="text-sky-400 font-bold">−5°C</div><div class="text-white/35 mt-0.5">Ottimale ✓</div></div>
+            <div class="glass rounded-lg py-2 px-1"><div class="text-violet-400 font-bold">−10°C</div><div class="text-white/35 mt-0.5">Fragile</div></div>
+          </div>
+        </div>
+
+        <!-- Zamboni -->
+        <div class="reveal glass rounded-3xl p-8">
+          <div class="flex items-center gap-3 mb-5">
+            <div class="text-4xl">🚜</div>
+            <div>
+              <h3 class="text-lg font-bold text-white">L'Effetto Zamboni</h3>
+              <p class="text-sky-400 text-sm">La levigatrice del ghiaccio</p>
+            </div>
+          </div>
+          <div class="space-y-4">
+            <div class="flex gap-3 items-start">
+              <div class="w-6 h-6 rounded-full bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-xs font-bold text-sky-300 shrink-0 mt-0.5">1</div>
+              <p class="text-white/55 text-sm">La lama <strong class="text-white">taglia</strong> lo strato superficiale rovinato (dai tagli dei pattini)</p>
+            </div>
+            <div class="flex gap-3 items-start">
+              <div class="w-6 h-6 rounded-full bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-xs font-bold text-sky-300 shrink-0 mt-0.5">2</div>
+              <p class="text-white/55 text-sm">Un aspiratore rimuove i <strong class="text-white">residui di ghiaccio e sporco</strong></p>
+            </div>
+            <div class="flex gap-3 items-start">
+              <div class="w-6 h-6 rounded-full bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-xs font-bold text-sky-300 shrink-0 mt-0.5">3</div>
+              <p class="text-white/55 text-sm">Un velo di <strong class="text-white">acqua calda (±60°C)</strong> viene depositato sulla superficie</p>
+            </div>
+            <div class="flex gap-3 items-start">
+              <div class="w-6 h-6 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-xs font-bold text-emerald-300 shrink-0 mt-0.5">✓</div>
+              <p class="text-white/55 text-sm">L'acqua calda <strong class="text-white">fonde leggermente lo strato sottostante</strong>, creando una fusione perfetta: superficie ultra-liscia e omogenea</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Puck Science -->
+      <div class="reveal glass rounded-3xl p-8">
+        <div class="grid md:grid-cols-3 gap-8">
+          <div class="md:col-span-1">
+            <h3 class="text-lg font-bold text-white mb-2">Il Puck — Fisica &amp; Scienza</h3>
+            <p class="text-white/40 text-xs leading-relaxed">Il disco di gomma vulcanizzata è un capolavoro di fisica applicata. Ogni dettaglio è ottimizzato per le massime prestazioni.</p>
+          </div>
+          <div class="md:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div class="glass rounded-xl p-4 text-center glass-h">
+              <div class="text-2xl mb-1">⚖️</div>
+              <div class="text-sky-300 font-black text-xl">170g</div>
+              <div class="text-white/40 text-xs mt-1">Peso standard</div>
+            </div>
+            <div class="glass rounded-xl p-4 text-center glass-h">
+              <div class="text-2xl mb-1">📏</div>
+              <div class="text-sky-300 font-black text-xl">76mm</div>
+              <div class="text-white/40 text-xs mt-1">Diametro</div>
+            </div>
+            <div class="glass rounded-xl p-4 text-center glass-h">
+              <div class="text-2xl mb-1">🥶</div>
+              <div class="text-sky-300 font-black text-xl">−18°C</div>
+              <div class="text-white/40 text-xs mt-1">Pre-gara</div>
+            </div>
+            <div class="glass rounded-xl p-4 text-center glass-h">
+              <div class="text-2xl mb-1">🔄</div>
+              <div class="text-sky-300 font-black text-xl">15min</div>
+              <div class="text-white/40 text-xs mt-1">Sostituzione</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SQUADRE PRINCIPALI ===== -->
+  <section class="section">
+    <div class="max-w-7xl mx-auto">
+      <div class="reveal mb-12">
+        <div class="divider bg-gradient-to-r from-sky-400 to-violet-500"></div>
+        <h2 class="font-black text-white mb-3" style="font-size:clamp(2rem,5vw,3.5rem)">
+          Le Grandi <span class="gt">Potenze</span>
+        </h2>
+        <p class="text-white/50 text-lg max-w-2xl">L'Italia ha affrontato i giganti dell'hockey mondiale sul proprio ghiaccio di casa.</p>
+      </div>
+
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="reveal team-card glass rounded-2xl p-5 text-center border border-white/5">
+          <div class="text-4xl mb-3">🇨🇦</div>
+          <h3 class="font-bold text-white">Canada</h3>
+          <p class="text-white/40 text-xs mt-1">La Nazione del Hockey</p>
+          <div class="mt-3 text-xs text-amber-400 font-semibold">⭐ Candidata all'Oro</div>
+        </div>
+        <div class="reveal team-card glass rounded-2xl p-5 text-center border border-white/5">
+          <div class="text-4xl mb-3">🇺🇸</div>
+          <h3 class="font-bold text-white">USA</h3>
+          <p class="text-white/40 text-xs mt-1">La Potenza NHL</p>
+          <div class="mt-3 text-xs text-amber-400 font-semibold">⭐ Candidata all'Oro</div>
+        </div>
+        <div class="reveal team-card glass rounded-2xl p-5 text-center border border-white/5">
+          <div class="text-4xl mb-3">🇸🇪</div>
+          <h3 class="font-bold text-white">Svezia</h3>
+          <p class="text-white/40 text-xs mt-1">Il Tre Kronor</p>
+          <div class="mt-3 text-xs text-sky-400 font-semibold">💪 Top Contender</div>
+        </div>
+        <div class="reveal team-card glass rounded-2xl p-5 text-center border border-white/5">
+          <div class="text-4xl mb-3">🇫🇮</div>
+          <h3 class="font-bold text-white">Finlandia</h3>
+          <p class="text-white/40 text-xs mt-1">I Campioni 2022</p>
+          <div class="mt-3 text-xs text-sky-400 font-semibold">💪 Top Contender</div>
+        </div>
+        <div class="reveal team-card glass rounded-2xl p-5 text-center border border-sky-500/20">
+          <div class="text-4xl mb-3">🇮🇹</div>
+          <h3 class="font-bold text-white">Italia</h3>
+          <p class="text-white/40 text-xs mt-1">Padrona di Casa</p>
+          <div class="mt-3 text-xs text-violet-400 font-semibold">🏠 Fattore Casa!</div>
+        </div>
+        <div class="reveal team-card glass rounded-2xl p-5 text-center border border-white/5">
+          <div class="text-4xl mb-3">🇷🇺</div>
+          <h3 class="font-bold text-white">ROC</h3>
+          <p class="text-white/40 text-xs mt-1">Tradizione storica</p>
+          <div class="mt-3 text-xs text-sky-400 font-semibold">💪 Top Contender</div>
+        </div>
+        <div class="reveal team-card glass rounded-2xl p-5 text-center border border-white/5">
+          <div class="text-4xl mb-3">🇩🇪</div>
+          <h3 class="font-bold text-white">Germania</h3>
+          <p class="text-white/40 text-xs mt-1">In rapida crescita</p>
+          <div class="mt-3 text-xs text-white/30 font-semibold">🔥 Dark Horse</div>
+        </div>
+        <div class="reveal team-card glass rounded-2xl p-5 text-center border border-white/5">
+          <div class="text-4xl mb-3">🇨🇿</div>
+          <h3 class="font-bold text-white">Cechia</h3>
+          <p class="text-white/40 text-xs mt-1">Hockey Centrale</p>
+          <div class="mt-3 text-xs text-white/30 font-semibold">🔥 Dark Horse</div>
+        </div>
+      </div>
+
+      <!-- Italian team callout -->
+      <div class="reveal mt-8 glass rounded-3xl p-8" style="border:1px solid rgba(56,189,248,.2);background:linear-gradient(135deg,rgba(56,189,248,.06),rgba(124,58,237,.06))">
+        <div class="flex flex-col sm:flex-row gap-5 items-start">
+          <div class="text-5xl shrink-0">🇮🇹</div>
+          <div>
+            <h3 class="text-xl font-black text-white mb-2">Il Fattore Casa per l'Italia</h3>
+            <p class="text-white/60 leading-relaxed text-sm">
+              La nazionale italiana, guidata dalla passione incontenibile dei tifosi locali, ha avuto l'onore e l'onere di competere contro i colossi mondiali. Affrontare <strong class="text-white">Canada, Svezia e USA</strong> sul proprio ghiaccio — al PalaItalia Santa Giulia, davanti a 10.000 tifosi che cantavano "Azzurri" — è stata un'opportunità irripetibile. Un'occasione per ispirare una nuova generazione di atleti verso il prossimo ciclo olimpico.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="py-16 px-6 border-t border-white/5">
+    <div class="max-w-7xl mx-auto">
+      <div class="grid md:grid-cols-3 gap-10 mb-10">
+        <div>
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-violet-600 flex items-center justify-center font-black text-xs">MC</div>
+            <span class="font-semibold text-white">Milano Cortina 2026</span>
+          </div>
+          <p class="text-white/35 text-sm leading-relaxed">
+            Hockey sul Ghiaccio · Deep Dive. Dati, fisica e tattica del torneo olimpico.
+          </p>
+        </div>
+        <div>
+          <h4 class="text-white font-semibold mb-4">Naviga</h4>
+          <nav class="space-y-2">
+            <a href="index.html"  class="block text-white/45 hover:text-white text-sm transition-colors">← I Giochi</a>
+            <a href="hockey.html" class="block text-sky-400 text-sm font-semibold">Hockey (questa pagina)</a>
+            <a href="venues.html" class="block text-white/45 hover:text-white text-sm transition-colors">Sedi Olimpiche →</a>
+          </nav>
+        </div>
+        <div>
+          <h4 class="text-white font-semibold mb-4">Fonti</h4>
+          <div class="space-y-2">
+            <a href="https://www.iihf.com" target="_blank" rel="noopener" class="flex items-center gap-2 glass hover:bg-white/10 text-white/55 hover:text-white px-4 py-2.5 rounded-xl text-sm transition-all">🏒 IIHF — Regolamento Ufficiale</a>
+            <a href="https://www.nhl.com" target="_blank" rel="noopener" class="flex items-center gap-2 glass hover:bg-white/10 text-white/55 hover:text-white px-4 py-2.5 rounded-xl text-sm transition-all">🏆 NHL Official</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===== SCRIPTS ===== -->
+  <script>
+    // ── CURSOR + TRAIL ──
+    const cur = document.getElementById('cursor');
+    const dot = document.getElementById('cursor-dot');
+    const tc  = document.getElementById('trail-canvas');
+    const tx  = tc.getContext('2d');
+    let mx=0, my=0, dx=0, dy=0;
+    const trail = [];
+    const MAX_TRAIL = 22;
+
+    function resizeTrail() { tc.width=innerWidth; tc.height=innerHeight; }
+    resizeTrail(); addEventListener('resize', resizeTrail);
+
+    document.addEventListener('mousemove', e => {
+      mx=e.clientX; my=e.clientY;
+      cur.style.left=mx+'px'; cur.style.top=my+'px';
+      trail.push({x:mx, y:my, life:1, angle: Math.atan2(my-(trail[trail.length-1]?.y||my), mx-(trail[trail.length-1]?.x||mx))});
+      if(trail.length>MAX_TRAIL) trail.shift();
+    });
+
+    (function animDot(){ dx+=(mx-dx)*.13; dy+=(my-dy)*.13; dot.style.left=dx+'px'; dot.style.top=dy+'px'; requestAnimationFrame(animDot); })();
+
+    (function animTrail(){
+      tx.clearRect(0,0,tc.width,tc.height);
+      for(let i=1;i<trail.length;i++){
+        const p=trail[i-1], c=trail[i];
+        const alpha=c.life*(i/trail.length)*0.35;
+        tx.strokeStyle=`rgba(56,189,248,${alpha})`;
+        tx.lineWidth=3*(i/trail.length);
+        tx.lineCap='round';
+        tx.beginPath(); tx.moveTo(p.x,p.y); tx.lineTo(c.x,c.y); tx.stroke();
+      }
+      trail.forEach(p=>{ p.life*=.94; });
+      requestAnimationFrame(animTrail);
+    })();
+
+    // Cursor hover
+    document.querySelectorAll('a,button,[tabindex]').forEach(el=>{
+      el.addEventListener('mouseenter',()=>{ cur.style.width='40px'; cur.style.height='16px'; cur.style.background='rgba(56,189,248,.2)'; });
+      el.addEventListener('mouseleave',()=>{ cur.style.width='22px'; cur.style.height='9px'; cur.style.background='#12121f'; });
+    });
+
+    // ── HERO CANVAS (ice particles) ──
+    const hc = document.getElementById('hero-canvas');
+    const hx = hc.getContext('2d');
+    function resizeHero(){ hc.width=innerWidth; hc.height=innerHeight; }
+    resizeHero(); addEventListener('resize', resizeHero);
+
+    class IceParticle {
+      constructor(){ this.init(); }
+      init(){
+        this.x=Math.random()*hc.width; this.y=Math.random()*hc.height-hc.height;
+        this.s=Math.random()*3+1; this.vy=Math.random()*.3+.08;
+        this.vx=(Math.random()-.5)*.15; this.o=Math.random()*.5+.08;
+        this.r=Math.random()*Math.PI*2; this.dr=(Math.random()-.5)*.005;
+      }
+      step(){ this.y+=this.vy; this.x+=this.vx; this.r+=this.dr; if(this.y>hc.height+20) this.init(); }
+      draw(){
+        hx.save(); hx.translate(this.x,this.y); hx.rotate(this.r);
+        hx.globalAlpha=this.o; hx.strokeStyle='#7DD3FC'; hx.lineWidth=.6;
+        for(let i=0;i<6;i++){
+          hx.beginPath(); hx.moveTo(0,0); hx.lineTo(0,this.s*3);
+          hx.moveTo(0,this.s); hx.lineTo(this.s*.7,this.s*1.7);
+          hx.moveTo(0,this.s); hx.lineTo(-this.s*.7,this.s*1.7);
+          hx.stroke(); hx.rotate(Math.PI/3);
+        }
+        hx.restore();
+      }
+    }
+    const particles = Array.from({length:60},()=>new IceParticle());
+    (function animHero(){ hx.clearRect(0,0,hc.width,hc.height); particles.forEach(p=>{p.step();p.draw();}); requestAnimationFrame(animHero); })();
+
+    // ── RINK SVG INTERACTIVO ──
+    const tooltip = document.getElementById('zone-tooltip');
+    const rinkSvg = document.getElementById('rink-svg');
+
+    document.querySelectorAll('[data-tip]').forEach(el=>{
+      const show = (e) => {
+        tooltip.textContent = el.dataset.tip;
+        tooltip.style.opacity='1';
+        const rect = rinkSvg.getBoundingClientRect();
+        let left = e.clientX - rect.left + 12;
+        let top  = e.clientY - rect.top  - 10;
+        if(left+190 > rect.width) left = left - 200;
+        if(top+80  > rect.height) top  = top  - 90;
+        tooltip.style.left = left+'px';
+        tooltip.style.top  = top+'px';
+      };
+      el.addEventListener('mousemove', show);
+      el.addEventListener('mouseenter', show);
+      el.addEventListener('mouseleave',()=>{ tooltip.style.opacity='0'; });
+      el.addEventListener('focus', (e)=>{
+        tooltip.textContent=el.dataset.tip;
+        tooltip.style.opacity='1';
+        tooltip.style.left='50%'; tooltip.style.top='10px';
+      });
+      el.addEventListener('blur',()=>{ tooltip.style.opacity='0'; });
+    });
+
+    // Animate puck on rink SVG
+    const svgPuck = document.getElementById('svg-puck');
+    let pt=0, pi=0;
+    const route = [[360,220],[555,140],[690,220],[555,300],[360,220],[165,140],[30,220],[165,300],[360,220]];
+    (function animPuck(){
+      pt+=.015; if(pt>=1){pt=0;pi=(pi+1)%route.length;}
+      const a=route[pi], b=route[(pi+1)%route.length];
+      svgPuck.setAttribute('cx', a[0]+(b[0]-a[0])*pt);
+      svgPuck.setAttribute('cy', a[1]+(b[1]-a[1])*pt);
+      requestAnimationFrame(animPuck);
+    })();
+
+    // ── SPEED BARS ──
+    const speeds=[100,65,45,27];
+    const bars=document.querySelectorAll('.speed-bar-fill');
+    ScrollTrigger.create({
+      trigger:'#speed-bars', start:'top 85%', once:true,
+      onEnter:()=>{ bars.forEach((b,i)=>{ setTimeout(()=>{ b.style.width=speeds[i]+'%'; },i*120); }); }
+    });
+
+    // ── TEMP SLIDER ──
+    const slider=document.getElementById('temp-slider');
+    const display=document.getElementById('temp-display');
+    const feedback=document.getElementById('temp-feedback');
+    const tempMap={
+      '-10':{cls:'text-violet-300',icon:'⚠️',label:'Ghiaccio Troppo Freddo',desc:'Sotto −8°C il ghiaccio diventa fragile e si scheggia sotto la lama. I pattini perdono aderenza e la superficie si sgretola dopo pochi minuti di gioco.'},
+      '-9': {cls:'text-violet-300',icon:'⚠️',label:'Ghiaccio Molto Freddo',desc:'Ancora troppo rigido. Rischio scheggiature e superficie irregolare.'},
+      '-8': {cls:'text-violet-300',icon:'⚠️',label:'Ghiaccio Freddo',desc:'Leggermente fuori ottimale. La pista regge ma la qualità degrada rapidamente.'},
+      '-7': {cls:'text-sky-300',icon:'✓',label:'Ghiaccio Ottimale',desc:'Ottimo! Temperatura ideale, ghiaccio consistente e veloce. Le squadre NHL preferiscono questo range.'},
+      '-6': {cls:'text-sky-300',icon:'✓',label:'Ghiaccio Ottimale',desc:'Temperatura ideale. Superficie perfettamente equilibrata tra velocità e tenuta del pattino.'},
+      '-5': {cls:'text-sky-300',icon:'✓',label:'Ghiaccio Ottimale',desc:'Il range ideale olimpico. Puck veloce, scarso attrito, superficie dura ma non fragile.'},
+      '-4': {cls:'text-amber-300',icon:'⚡',label:'Ghiaccio Tiepido',desc:'Inizia a diventare "lento". La superficie assorbe energia dal puck e dai pattini, riducendo la velocità di gioco.'},
+      '-3': {cls:'text-orange-300',icon:'🌊',label:'Ghiaccio Morbido',desc:'Troppo caldo. La superficie si deforma rapidamente creando solchi profondi. Il puck rimbalza in modo irregolare.'},
+      '-2': {cls:'text-red-400',icon:'💧',label:'Ghiaccio Umido',desc:'Il ghiaccio è quasi liquido in superficie. Pericoloso per i pattini, il gioco diventa imprevedibile e lento.'},
+      '-1': {cls:'text-red-400',icon:'🔴',label:'Ghiaccio Lento',desc:'Ingiocabile per standard olimpici. Il puck si ferma, le lame affondano, il gioco perde ogni spettacolarità.'},
+    };
+    slider.addEventListener('input',()=>{
+      const v=slider.value;
+      display.textContent=v+'°C';
+      const t=tempMap[v]||tempMap['-5'];
+      feedback.innerHTML=`<span class="${t.cls} font-bold">${t.icon} ${t.label}</span><p class="text-white/55 mt-1 text-xs">${t.desc}</p>`;
+    });
+
+    // ── GSAP ──
+    gsap.registerPlugin(ScrollTrigger);
+    gsap.timeline({defaults:{ease:'power3.out'}})
+      .from('#h-badge',{opacity:0,y:14,duration:.6})
+      .from('#h-title span',{opacity:0,y:60,stagger:.1,duration:.8},'-=.2')
+      .from('#h-sub',{opacity:0,y:16,duration:.6},'-=.4')
+      .from('#h-stats > *',{opacity:0,y:20,stagger:.08,duration:.5},'-=.4')
+      .from('#h-cta',{opacity:0,y:16,duration:.5},'-=.4');
+
+    document.querySelectorAll('.reveal').forEach((el,i)=>{
+      gsap.fromTo(el,{opacity:0,y:50},{
+        opacity:1,y:0,duration:.8,ease:'power2.out',delay:(i%4)*.09,
+        scrollTrigger:{trigger:el,start:'top 87%',toggleActions:'play none none none'}
+      });
+    });
+
+    const nav=document.getElementById('navbar');
+    addEventListener('scroll',()=>nav.classList.toggle('nav-scrolled',scrollY>60));
+    document.getElementById('mob-btn').addEventListener('click',()=>document.getElementById('mob-menu').classList.toggle('hidden'));
+  </script>
+</body>
+</html>
